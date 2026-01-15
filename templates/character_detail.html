@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import panel_component %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5 align-items-center">
+        <div class="col-md-3 text-center">
+            <img src="{{ character.image_url }}" alt="{{ character.name }}" 
+                 class="img-fluid rounded-circle shadow" style="max-width: 200px; border: 5px solid white;">
+        </div>
+        
+        <div class="col-md-9">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                    <li class="breadcrumb-item active">Characters</li>
+                </ol>
+            </nav>
+            <h1 class="display-4">{{ character.name }}</h1>
+            <p class="lead text-muted">{{ character.description }}</p>
+        </div>
+    </div>
+
+    <hr>
+
+    <h3 class="mb-4">Appearances ({{ character.pages|length }})</h3>
+    
+    {% if character.pages %}
+        <div class="row">
+            {% for page in character.pages %}
+                <div class="col-md-4">
+                    <div class="mb-2">
+                        <a href="{{ url_for('book_detail', book_id=page.book_id) }}" class="btn btn-sm btn-outline-secondary">
+                            View Full Book #{{ page.book_id }}
+                        </a>
+                    </div>
+                    {{ panel_component(page) }}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-light text-center">
+            This character hasn't appeared in any panels yet.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import book_preview %}
+
+{% block content %}
+    <h1>{{ game.display_title }}</h1>
+    <p class="text-muted">Played on {{ game.date.strftime('%B %d, %Y') }}</p>
+
+    <section class="mb-5">
+        <h3>Participants</h3>
+        <ul>
+        {% for user, alias in participants %}
+            <li>
+                <a href="{{ url_for('user_detail', user_id=user.id) }}">{{ user.true_name }}</a> 
+                (as {{ alias.name }})
+            </li>
+        {% endfor %}
+        </ul>
+    </section>
+
+    <section class="book-grid">
+        {% for book in game.books %}
+            {{ book_preview(book) }}
+        {% endfor %}
+    </section>
+{% endblock %}

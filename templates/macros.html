@@ -1,0 +1,74 @@
+{% macro panel_component(page) %}
+<div class="panel-card">
+    <div class="panel-content">
+        {% if page.type == 'text' %}
+            <blockquote class="text-panel">
+                "{{ page.content_text }}"
+            </blockquote>
+        {% else %}
+             
+            <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}" class="img-fluid">
+            
+            {% if page.characters %}
+            <div class="panel-chars">
+                <small>Featuring: 
+                {% for char in page.characters %}
+                    <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
+                {% endfor %}
+                </small>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    <div class="panel-footer">
+        <small>
+            By <a href="{{ url_for('user_detail', user_id=page.author_alias.user.id) }}">
+                {{ page.author_alias.name }}
+            </a>
+        </small>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro book_preview(book) %}
+{% set first_text = book.get_first_text_page() %}
+{% set first_image = book.get_first_image_page() %}
+{% set first_author = first_text.author_alias if first_text else None %}
+
+<div class="book-preview-card">
+    <a href="{{ url_for('book_detail', book_id=book.id) }}" class="text-decoration-none text-dark">
+        <div class="preview-image">
+            {% if first_image %}
+                 
+                <img src="{{ first_image.content_url }}" alt="Book Preview">
+            {% else %}
+                <div class="placeholder-img">No Image</div>
+            {% endif %}
+        </div>
+        <div class="preview-caption">
+            <h5>{{ first_text.content_text if first_text else "Untitled" }}</h5>
+        </div>
+    </a>
+    {% if first_author %}
+    <div class="preview-footer">
+        Started by <a href="{{ url_for('user_detail', user_id=first_author.user.id) }}">
+            {{ first_author.name }}
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro game_preview(game) %}
+<div class="game-preview-card">
+    <a href="{{ url_for('game_detail', game_id=game.id) }}">
+        <div class="game-thumbnail">
+            <img src="{{ game.get_preview_image() }}" alt="Game Preview">
+        </div>
+        <div class="game-info">
+            <h4>{{ game.display_title }}</h4>
+            <span class="text-muted">{{ game.books|length }} Books</span>
+        </div>
+    </a>
+</div>
+{% endmacro %}

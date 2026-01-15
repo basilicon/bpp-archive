@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import panel_component %}
+
+{% block content %}
+    <div class="user-profile">
+        <h1>{{ user.true_name }}</h1>
+        <p>{{ user.description }}</p>
+        
+        <h3>Known Aliases</h3>
+        <ul>
+            {% for alias in user.aliases %}
+                <li>{{ alias.name }}</li>
+            {% endfor %}
+        </ul>
+
+        <h3>Gallery (Panels Drawn)</h3>
+        <div class="gallery-grid">
+            {% for page in drawings %}
+                {{ panel_component(page) }}
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

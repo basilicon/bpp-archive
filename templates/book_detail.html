@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import panel_component %}
+
+{% block content %}
+    <div class="container">
+        <h2>Book #{{ book.id }}</h2>
+        <div class="book-stream">
+            {% for page in book.pages %}
+                {{ panel_component(page) }}
+                
+                {% if not loop.last %}
+                    <div class="connector">⬇</div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

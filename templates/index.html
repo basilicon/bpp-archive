@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import book_preview %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4 order-md-2 mb-4">
+        <div class="p-4 bg-white rounded shadow-sm">
+            <h3>Welcome</h3>
+            <p>Welcome to the digital archive of our Broken Picture Phone games.</p>
+            <a href="{{ url_for('search') }}" class="btn btn-outline-primary w-100">Search Archive</a>
+        </div>
+
+        <div class="mt-4">
+            <h4>Characters</h4>
+            <div class="list-group">
+                {% for char in characters %}
+                <a href="{{ url_for('character_detail', char_id=char.id) }}" class="list-group-item list-group-item-action d-flex align-items-center">
+                    <img src="{{ char.image_url }}" alt="{{ char.name }}" class="rounded-circle me-3" width="40" height="40">
+                    <div>
+                        <strong>{{ char.name }}</strong>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8 order-md-1">
+        <h2 class="mb-4">Recent Books</h2>
+        
+        <div class="row">
+            {% for book in books %}
+            <div class="col-md-6">
+                {{ book_preview(book) }}
+            </div>
+            {% else %}
+            <div class="col-12">
+                <p class="text-muted">No books found. Run <code>seed.py</code>!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

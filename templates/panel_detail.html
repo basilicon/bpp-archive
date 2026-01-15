@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('game_detail', game_id=panel.book.game_id) }}">Game</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('book_detail', book_id=panel.book.id) }}">Owning Book</a>
+            </li>
+            <li class="breadcrumb-item active">Panel #{{ panel.sequence }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                {% if panel.type == 'image' %}
+                <img src="{{ panel.content_url }}" class="img-fluid rounded-start" alt="BPP Drawing">
+                {% else %}
+                <div class="card-body py-5 text-center">
+                    <h2 class="fst-italic">"{{ panel.content_text }}"</h2>
+                </div>
+                {% endif %}
+                <div class="card-footer text-muted">
+                    Created by: <strong>{{ panel.author_alias.name }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Characters</h5>
+                    <span class="badge bg-primary">{{ panel.characters|length }}</span>
+                </div>
+
+                <div class="card-body p-0">
+                    {% if session.get('is_admin') %}
+                    <div class="p-3 border-bottom bg-light">
+                        <form action="{{ url_for('tag_character') }}" method="POST" class="d-flex gap-2">
+                            <input type="hidden" name="page_id" value="{{ panel.id }}">
+                            
+                            <select id="char-search" name="character_id" placeholder="Search for a character..." autocomplete="off">
+                                <option value="">Search characters...</option>
+                                {% for char in all_characters %}
+                                    <option value="{{ char.id }}">{{ char.name }}</option>
+                                {% endfor %}
+                            </select>
+                            
+                            <button type="submit" class="btn btn-sm btn-success px-3">Tag</button>
+                        </form>
+                    </div>
+
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            new TomSelect("#char-search", {
+                                create: false,
+                                sortField: {
+                                    field: "text",
+                                    direction: "asc"
+                                }
+                            });
+                        });
+                    </script>
+                    {% endif %}
+
+                    <div class="list-group list-group-flush overflow-auto" style="max-height: 400px;">
+                        {% if panel.characters %}
+                        {% for char in panel.characters %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('character_detail', char_id=char.id) }}"
+                                class="d-flex align-items-center text-decoration-none text-dark flex-grow-1">
+                                <img src="{{ char.image_url or url_for('static', filename='default_char.png') }}"
+                                    class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                <div>
+                                    <div class="fw-bold">{{ char.name }}</div>
+                                    <small class="text-muted">View Profile</small>
+                                </div>
+                            </a>
+
+                            {% if session.get('is_admin') %}
+                            <form action="{{ url_for('untag_character') }}" method="POST"
+                                onsubmit="return confirm('Remove this tag?');">
+                                <input type="hidden" name="page_id" value="{{ panel.id }}">
+                                <input type="hidden" name="character_id" value="{{ char.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                    <i class="bi bi-x-circle-fill"></i> &times;
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <p>No characters tagged in this panel yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

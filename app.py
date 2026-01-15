@@ -9,6 +9,7 @@ from import_bpp import process_html_content
 import json
 from b2blaze import upload_b64img_to_b2, delete_b2_file
 from dotenv import load_dotenv
+import base64
 
 load_dotenv()
 
@@ -351,11 +352,94 @@ def delete_item(table_name, item_id):
     flash("Item deleted.")
     return redirect(url_for('data_table_detail', table_name=table_name))
 
+@app.route('/panel/<int:page_id>')
+def panel_detail(page_id):
+    panel = Page.query.get_or_404(page_id)
+    all_characters = Character.query.order_by(Character.name).all()
+    return render_template('panel_detail.html', panel=panel, all_characters=all_characters)
+
+@app.route('/admin/tag-character', methods=['POST'])
+@admin_required
+def tag_character():
+    page_id = request.form.get('page_id')
+    char_id = request.form.get('character_id')
+    
+    panel = Page.query.get(page_id)
+    character = Character.query.get(char_id)
+    
+    if panel and character and character not in panel.characters:
+        panel.characters.append(character)
+        db.session.commit()
+        flash(f"Tagged {character.name}!")
+    
+    return redirect(url_for('panel_detail', page_id=page_id))
+
+@app.route('/admin/untag-character', methods=['POST'])
+@admin_required
+def untag_character():
+    page_id = request.form.get('page_id')
+    char_id = request.form.get('character_id')
+    
+    panel = Page.query.get(page_id)
+    character = Character.query.get(char_id)
+    
+    if panel and character and character in panel.characters:
+        panel.characters.remove(character)
+        db.session.commit()
+        flash(f"Removed {character.name} from panel.")
+    
+    return redirect(url_for('panel_detail', page_id=page_id))
+
+@app.route('/admin/update-image/<string:model_type>/<int:item_id>', methods=['POST'])
+@admin_required
+def update_image(model_type, item_id):
+    # 1. Get the image from the form
+    image_file = request.files.get('new_image')
+    if not image_file:
+        flash("No image selected!")
+        return redirect(request.referrer)
+
+    # 2. Upload to Backblaze B2
+    # We convert the file to a base64-like string for our existing helper
+    # or modify upload_to_b2 to accept raw bytes
+
+    image_bytes = image_file.read()
+    b64_string = base64.b64encode(image_bytes).decode('utf-8')
+    new_url = upload_b64img_to_b2(b64_string)
+
+    # 3. Update the Database
+    if model_type == 'character':
+        item = Character.query.get_or_404(item_id)
+        item.image_url = new_url
+        redirect_url = url_for('character_detail', char_id=item_id)
+    elif model_type == 'game':
+        item = Game.query.get_or_404(item_id)
+        # We need a field to store an override image
+        # Let's call it override_image_url
+        item.override_image_url = new_url 
+        redirect_url = url_for('game_list')
+        
+    db.session.commit()
+    flash(f"Updated {model_type} image!")
+    return redirect(redirect_url)
+
 @event.listens_for(Page, 'after_delete')
 def delete_page_file(mapper, connection, target):
     if target.type == 'image' and target.content_url:
         # delete from b2 using the URL
         delete_b2_file(target.content_url)
+
+# We listen to the 'characters' attribute on the Page model
+@event.listens_for(Page.characters, 'append')
+def set_initial_character_image(target_page, value_character, initiator):
+    """
+    target_page: The Page (Panel) being tagged
+    value_character: The Character being added to the panel
+    """
+    # Only proceed if the page is an image and the character has no image
+    if target_page.type == 'image' and not value_character.image_url:
+        value_character.image_url = target_page.content_url
+        # No need to commit here; SQLAlchemy handles it in the current transaction
 
 @app.context_processor
 def utility_processor():

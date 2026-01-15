@@ -5,10 +5,25 @@
 <div class="container">
     <div class="row mb-5 align-items-center">
         <div class="col-md-3 text-center">
-            <img src="{{ character.image_url }}" alt="{{ character.name }}" 
-                 class="img-fluid rounded-circle shadow" style="max-width: 200px; border: 5px solid white;">
+            <div class="d-flex flex-column align-items-center mb-4">
+                <img src="{{ character.image_url or '/static/default_char.png' }}" class="img-fluid rounded shadow mb-2"
+                    style="max-height: 250px; width: auto; object-fit: contain;">
+
+                {% if session.get('is_admin') %}
+                <div class="w-100">
+                    <form action="{{ url_for('update_image', model_type='character', item_id=character.id) }}"
+                        method="POST" enctype="multipart/form-data" class="input-group input-group-sm">
+
+                        <input type="file" name="new_image" class="form-control" id="charUpload" accept="image/*"
+                            required>
+                        <button class="btn btn-dark" type="submit">Upload</button>
+                    </form>
+                    <small class="text-muted text-center d-block mt-1">Replace profile drawing</small>
+                </div>
+                {% endif %}
+            </div>
         </div>
-        
+
         <div class="col-md-9">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
@@ -17,31 +32,31 @@
                 </ol>
             </nav>
             <h1 class="display-4">{{ character.name }}</h1>
-            <p class="lead text-muted">{{ character.description }}</p>
+            <p class="lead text-muted">{{ character.description or 'No description provided.' }}</p>
         </div>
     </div>
 
     <hr>
 
     <h3 class="mb-4">Appearances ({{ character.pages|length }})</h3>
-    
+
     {% if character.pages %}
-        <div class="row">
-            {% for page in character.pages %}
-                <div class="col-md-4">
-                    <div class="mb-2">
-                        <a href="{{ url_for('book_detail', book_id=page.book_id) }}" class="btn btn-sm btn-outline-secondary">
-                            View Full Book #{{ page.book_id }}
-                        </a>
-                    </div>
-                    {{ panel_component(page) }}
-                </div>
-            {% endfor %}
+    <div class="row">
+        {% for page in character.pages %}
+        <div class="col-md-4">
+            <div class="mb-2">
+                <a href="{{ url_for('book_detail', book_id=page.book_id) }}" class="btn btn-sm btn-outline-secondary">
+                    View Full Book #{{ page.book_id }}
+                </a>
+            </div>
+            {{ panel_component(page) }}
         </div>
+        {% endfor %}
+    </div>
     {% else %}
-        <div class="alert alert-light text-center">
-            This character hasn't appeared in any panels yet.
-        </div>
+    <div class="alert alert-light text-center">
+        This character hasn't appeared in any panels yet.
+    </div>
     {% endif %}
 </div>
 {% endblock %}

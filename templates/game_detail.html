@@ -2,24 +2,64 @@
 {% from 'macros.html' import book_preview %}
 
 {% block content %}
-    <h1>{{ game.display_title }}</h1>
-    <p class="text-muted">Played on {{ game.date.strftime('%B %d, %Y') }}</p>
+    <div class="row align-items-center mb-4">
+        <div class="col-md-8">
+            <h1>{{ game.display_title }}</h1>
+            <p class="text-muted">Played on {{ game.date.strftime('%B %d, %Y') }}</p>
+        </div>
+        
+        <div class="col-md-4 text-center">
+            <div class="d-flex flex-column align-items-center">
+                <img src="{{ game.get_preview_image() }}" 
+                     class="img-fluid rounded shadow-sm mb-2" 
+                     style="height: 150px; width: 250px; object-fit: cover;">
+                
+                {% if session.get('is_admin') %}
+                <div style="width: 250px;">
+                    <form action="{{ url_for('update_image', model_type='game', item_id=game.id) }}" 
+                          method="POST" 
+                          enctype="multipart/form-data" 
+                          class="input-group input-group-sm">
+                        <input type="file" name="new_image" class="form-control" accept="image/*" required>
+                        <button class="btn btn-dark" type="submit">Set</button>
+                    </form>
+                    <small class="text-muted d-block mt-1">Override cover image</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
-    <section class="mb-5">
-        <h3>Participants</h3>
-        <ul>
-        {% for user, alias in participants %}
-            <li>
-                <a href="{{ url_for('user_detail', user_id=user.id) }}">{{ user.true_name }}</a> 
-                (as {{ alias.name }})
-            </li>
-        {% endfor %}
-        </ul>
-    </section>
+    <hr>
 
-    <section class="book-grid">
-        {% for book in game.books %}
-            {{ book_preview(book) }}
-        {% endfor %}
-    </section>
+    <div class="row">
+        <div class="col-md-3">
+            <section class="mb-5 p-3 bg-light rounded border">
+                <h4>Participants</h4>
+                <ul class="list-unstyled">
+                {% for user, alias in participants %}
+                    <li class="mb-2">
+                        <a href="{{ url_for('user_detail', user_id=user.id) }}" class="fw-bold text-decoration-none">
+                            {{ user.true_name }}
+                        </a> 
+                        <br>
+                        <small class="text-muted">as {{ alias.name }}</small>
+                    </li>
+                {% endfor %}
+                </ul>
+            </section>
+        </div>
+
+        <div class="col-md-9">
+            <section class="book-grid">
+                <div class="row row-cols-1 row-cols-lg-2 g-4">
+                {% for book in game.books %}
+                    <div class="col">
+                        {{ book_preview(book) }}
+                    </div>
+                {% endfor %}
+                </div>
+            </section>
+        </div>
+    </div>
 {% endblock %}

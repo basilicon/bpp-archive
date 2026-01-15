@@ -27,6 +27,7 @@ class Game(db.Model):
     date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     title = db.Column(db.String(200)) # Optional title
     books = db.relationship('Book', backref='game', lazy=True, cascade="all, delete-orphan")
+    override_image_url = db.Column(db.String(200), nullable=True) # Optional custom preview image
 
     @property
     def display_title(self):
@@ -35,6 +36,8 @@ class Game(db.Model):
         return f"Game Night {self.date.strftime('%m/%d/%Y')}"
 
     def get_preview_image(self):
+        if self.override_image_url:
+            return self.override_image_url
         # Defaults to the first image panel of the first book
         if self.books:
             first_book = self.books[0]

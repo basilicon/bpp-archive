@@ -8,6 +8,9 @@ import uuid
 from import_bpp import process_html_content
 import json
 from b2blaze import upload_b64img_to_b2, delete_b2_file
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -26,6 +29,7 @@ else:
 
 # Important for Postgres: prevents connection timeout issues
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-for-sessions')
 db.init_app(app)
 
 @app.route('/')
@@ -360,7 +364,5 @@ def utility_processor():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'secret_key_for_sessions')
 
     app.run(debug=True, port=5001)

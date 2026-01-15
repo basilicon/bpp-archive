@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Step 2: Map Authors to Users</h2>
+<p class="text-muted">We found the following names in the file. Tell us who they are.</p>
+
+<form action="{{ url_for('import_step2') }}" method="POST">
+    <table class="table bg-white shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Name in BPP File</th>
+                <th>Assign to User</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for author in authors %}
+            <tr>
+                <td><strong>{{ author }}</strong></td>
+                <td>
+                    <select name="{{ author }}" class="form-select">
+                        <option value="NEW">Create New User: "{{ author }}"</option>
+                        <optgroup label="Link to Existing">
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.true_name }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit" class="btn btn-primary btn-lg">Finish Import</button>
+</form>
+{% endblock %}

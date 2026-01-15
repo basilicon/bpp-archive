@@ -4,6 +4,10 @@ from sqlalchemy import or_, Date
 from functools import wraps
 import os
 from datetime import datetime
+import uuid
+import base64
+from import_bpp import process_html_content
+import json
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///brokenpicturephone.db'
@@ -99,20 +103,131 @@ def admin_auth():
 def admin_dashboard():
     return render_template('admin/dashboard.html', tables=MODEL_MAP.keys())
 
-# 3. The BPP Parser Logic (Dummy for now)
-@app.route('/admin/upload-game', methods=['POST'])
+# 3. upload logic
+UPLOAD_FOLDER = 'static/uploads/panels'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def save_base64_image(base64_str):
+    # Strip metadata if present: "data:image/png;base64,iVBOR..."
+    if "base64," in base64_str:
+        base64_str = base64_str.split("base64,")[1]
+    
+    filename = f"{uuid.uuid4()}.png"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    
+    with open(filepath, "wb") as fh:
+        fh.write(base64.b64decode(base64_str))
+    
+    # Return the relative path for the DB (e.g., 'uploads/panels/uuid.png')
+    return f"uploads/panels/{filename}"
+
+@app.route('/admin/import/step1', methods=['POST'])
 @admin_required
-def upload_game():
-    # Placeholder for your actual BPP parsing logic
-    # raw_data = request.files['game_file']
-    print("Parsing BPP game data...")
+def import_step1():
+    file = request.files.get('game_file')
+    if not file: return "No file", 400
     
-    # Example creation
-    new_game = Game(title="Imported Game")
+    # Use your existing process_html_content function
+    html_content = file.read().decode('utf-8')
+    game_data = process_html_content(html_content)
+    
+    # Extract unique authors from the parsed data
+    found_authors = set()
+    for book in game_data['books']:
+        for page in book['pages']:
+            found_authors.add(page['author'])
+    
+    # Store game data in session (Careful: sessions have size limits, 
+    # for very large games, saving to a temp JSON file is better)
+    # session['temp_game_data'] = game_data
+
+    # Instead, save to a temp JSON file and store the filename in session
+    temp_filename = f"temp_game_{uuid.uuid4()}.json"
+    temp_filepath = os.path.join('instance', 'temp', temp_filename)
+    os.makedirs(os.path.dirname(temp_filepath), exist_ok=True)
+    with open(temp_filepath, 'w') as f:
+        json.dump(game_data, f)
+    session['temp_game_data_file'] = temp_filename
+    
+    # Fetch all existing users for the mapping dropdown
+    existing_users = User.query.all()
+    
+    return render_template('admin/import_map.html', 
+                           authors=sorted(list(found_authors)), 
+                           users=existing_users)
+
+@app.route('/admin/import/step2', methods=['POST'])
+@admin_required
+def import_step2():
+    #game_data = session.get('temp_game_data')
+    #if not game_data: return "Session expired", 400
+
+    temp_filename = session.get('temp_game_data_file')
+    if not temp_filename: return "Session expired", 400
+    temp_filepath = os.path.join('instance', 'temp', temp_filename)
+    if not os.path.exists(temp_filepath):
+        return "Session expired", 400
+    with open(temp_filepath, 'r') as f:
+        game_data = json.load(f)
+
+    # Get the mapping from the form: { 'AuthorName': 'user_id' or 'NEW' }
+    mapping = request.form
+    
+    # 1. Process Game & Books
+    new_game = Game(date=datetime.fromisoformat(game_data['date']).date())
     db.session.add(new_game)
+    db.session.flush()
+
+    user_cache = {} # Map author names to Alias objects
+
+    for book_data in game_data['books']:
+        new_book = Book(game_id=new_game.id)
+        db.session.add(new_book)
+        db.session.flush()
+
+        for page_data in book_data['pages']:
+            author_name = page_data['author']
+            
+            # 2. Handle the mapping/alias logic
+            if author_name not in user_cache:
+                choice = mapping.get(author_name) # returns user_id or 'NEW'
+                
+                if choice == 'NEW':
+                    u = User(true_name=author_name)
+                    db.session.add(u)
+                    db.session.flush()
+                    user_id = u.id
+                else:
+                    user_id = int(choice)
+
+                # Find or create Alias for this user
+                alias = Alias.query.filter_by(name=author_name, user_id=user_id).first()
+                if not alias:
+                    alias = Alias(name=author_name, user_id=user_id)
+                    db.session.add(alias)
+                    db.session.flush()
+                user_cache[author_name] = alias
+
+            # 3. Handle image saving to file system
+            p_type = 'image' if page_data['type'] == 'drawing' else 'text'
+            final_content = page_data['content']
+            
+            if p_type == 'image':
+                final_content = save_base64_image(page_data['content'])
+
+            new_page = Page(
+                book_id=new_book.id,
+                alias_id=user_cache[author_name].id,
+                sequence=page_data['sequence'],
+                type=p_type,
+                content_text=final_content if p_type == 'text' else None,
+                content_url=url_for('static', filename=final_content) if p_type == 'image' else None
+            )
+            db.session.add(new_page)
+
     db.session.commit()
-    
-    flash("Game successfully parsed and uploaded!")
+    session.pop('temp_game_data', None)
+    flash("Game successfully imported with mapped users!")
     return redirect(url_for('admin_dashboard'))
 
 # 4. Manage Keys

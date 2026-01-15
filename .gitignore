@@ -12,3 +12,5 @@ instance/
 Thumbs.db
 
 .env
+
+static/uploads/panels/

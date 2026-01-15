@@ -5,3 +5,4 @@ beautifulsoup4
 b2sdk
 python-dotenv
 werkzeug
+gunicorn

@@ -8,9 +8,6 @@ import uuid
 from import_bpp import process_html_content
 import json
 from b2blaze import upload_b64img_to_b2, delete_b2_file
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = Flask(__name__)
 

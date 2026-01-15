@@ -225,6 +225,8 @@ def import_step2():
             )
             db.session.add(new_page)
 
+    # lastly, remove the temp file and session key
+    os.remove(temp_filepath)
     db.session.commit()
     session.pop('temp_game_data', None)
     flash("Game successfully imported with mapped users!")
@@ -315,6 +317,14 @@ def delete_item(table_name, item_id):
     db.session.commit()
     flash("Item deleted.")
     return redirect(url_for('data_table_detail', table_name=table_name))
+
+@event.listens_for(Page, 'after_delete')
+def delete_page_file(mapper, connection, target):
+    if target.type == 'image' and target.content_url:
+        # Assuming content_url is '/static/uploads/panels/name.png'
+        file_path = target.content_url.lstrip('/')
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 @app.context_processor
 def utility_processor():

@@ -6,15 +6,15 @@ db = SQLAlchemy()
 
 # Association table for Characters appearing in Pages (Many-to-Many)
 page_characters = db.Table('page_characters',
-    db.Column('page_id', db.Integer, db.ForeignKey('page.id'), primary_key=True),
-    db.Column('character_id', db.Integer, db.ForeignKey('character.id'), primary_key=True)
+    db.Column('page_id', db.ForeignKey('page.id', ondelete="CASCADE"), primary_key=True),
+    db.Column('character_id', db.ForeignKey('character.id', ondelete="CASCADE"), primary_key=True)
 )
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     true_name = db.Column(db.String(100), nullable=False, unique=True)
     description = db.Column(db.Text)
-    aliases = db.relationship('Alias', backref='user', lazy=True)
+    aliases = db.relationship('Alias', backref='user', lazy=True, passive_deletes=True)
 
 class Alias(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -26,7 +26,7 @@ class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     title = db.Column(db.String(200)) # Optional title
-    books = db.relationship('Book', backref='game', lazy=True)
+    books = db.relationship('Book', backref='game', lazy=True, cascade="all, delete-orphan")
 
     @property
     def display_title(self):
@@ -47,7 +47,7 @@ class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
     # Order pages by sequence number
-    pages = db.relationship('Page', backref='book', lazy='dynamic', order_by='Page.sequence')
+    pages = db.relationship('Page', backref='book', lazy='dynamic', order_by='Page.sequence', cascade="all, delete-orphan")
 
     def get_first_text_page(self):
         return self.pages.filter_by(type='text').first()
@@ -58,7 +58,7 @@ class Book(db.Model):
 class Page(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
-    alias_id = db.Column(db.Integer, db.ForeignKey('alias.id'), nullable=False)
+    alias_id = db.Column(db.Integer, db.ForeignKey('alias.id'), nullable=True)
     
     sequence = db.Column(db.Integer, nullable=False) # 1, 2, 3...
     type = db.Column(db.String(10), nullable=False) # 'text' or 'image'

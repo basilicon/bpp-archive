@@ -16,10 +16,9 @@ db.init_app(app)
 
 @app.route('/')
 def index():
-    # Main page: Recent books and characters
-    recent_books = Book.query.order_by(Book.id.desc()).limit(5).all()
-    characters = Character.query.limit(5).all()
-    return render_template('index.html', books=recent_books, characters=characters)
+    # Show the 3 most recent games at the top
+    recent_games = Game.query.order_by(Game.date.desc()).limit(3).all()
+    return render_template('index.html', recent_games=recent_games)
 
 @app.route('/search')
 def search():
@@ -56,6 +55,25 @@ def game_detail(game_id):
                 involved_users.add((page.author_alias.user, page.author_alias))
     
     return render_template('game_detail.html', game=game, participants=involved_users)
+
+@app.route('/games')
+def game_list():
+    page = request.args.get('page', 1, type=int)
+    sort = request.args.get('sort', 'desc') # 'desc' for newest first, 'asc' for oldest
+    
+    query = Game.query
+    if sort == 'asc':
+        query = query.order_by(Game.date.asc())
+    else:
+        query = query.order_by(Game.date.desc())
+        
+    pagination = query.paginate(page=page, per_page=10, error_out=False)
+    games = pagination.items
+    
+    return render_template('game_list.html', 
+                           games=games, 
+                           pagination=pagination, 
+                           current_sort=sort)
 
 @app.route('/book/<int:book_id>')
 def book_detail(book_id):

@@ -8,6 +8,7 @@ import uuid
 import base64
 from import_bpp import process_html_content
 import json
+from b2blaze import upload_b64img_to_b2, delete_b2_file
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///brokenpicturephone.db'
@@ -104,23 +105,6 @@ def admin_dashboard():
     return render_template('admin/dashboard.html', tables=MODEL_MAP.keys())
 
 # 3. upload logic
-UPLOAD_FOLDER = 'static/uploads/panels'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-def save_base64_image(base64_str):
-    # Strip metadata if present: "data:image/png;base64,iVBOR..."
-    if "base64," in base64_str:
-        base64_str = base64_str.split("base64,")[1]
-    
-    filename = f"{uuid.uuid4()}.png"
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    
-    with open(filepath, "wb") as fh:
-        fh.write(base64.b64decode(base64_str))
-    
-    # Return the relative path for the DB (e.g., 'uploads/panels/uuid.png')
-    return f"uploads/panels/{filename}"
-
 @app.route('/admin/import/step1', methods=['POST'])
 @admin_required
 def import_step1():
@@ -212,8 +196,12 @@ def import_step2():
             p_type = 'image' if page_data['type'] == 'drawing' else 'text'
             final_content = page_data['content']
             
+            # Inside import_step2 loop
             if p_type == 'image':
-                final_content = save_base64_image(page_data['content'])
+                # Now returns a cloud URL instead of a local path
+                final_content = upload_b64img_to_b2(page_data['content'])
+            else:
+                final_content = page_data['content']
 
             new_page = Page(
                 book_id=new_book.id,
@@ -221,7 +209,16 @@ def import_step2():
                 sequence=page_data['sequence'],
                 type=p_type,
                 content_text=final_content if p_type == 'text' else None,
-                content_url=url_for('static', filename=final_content) if p_type == 'image' else None
+                content_url=final_content if p_type == 'image' else None # This is now the B2 URL
+            )
+
+            new_page = Page(
+                book_id=new_book.id,
+                alias_id=user_cache[author_name].id,
+                sequence=page_data['sequence'],
+                type=p_type,
+                content_text=final_content if p_type == 'text' else None,
+                content_url=final_content if p_type == 'image' else None
             )
             db.session.add(new_page)
 
@@ -321,10 +318,8 @@ def delete_item(table_name, item_id):
 @event.listens_for(Page, 'after_delete')
 def delete_page_file(mapper, connection, target):
     if target.type == 'image' and target.content_url:
-        # Assuming content_url is '/static/uploads/panels/name.png'
-        file_path = target.content_url.lstrip('/')
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        # delete from b2 using the URL
+        delete_b2_file(target.content_url)
 
 @app.context_processor
 def utility_processor():

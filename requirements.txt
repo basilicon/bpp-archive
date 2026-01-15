@@ -1,0 +1,6 @@
+Flask
+Flask-SQLAlchemy
+beautifulsoup4
+b2sdk
+python-dotenv
+werkzeug

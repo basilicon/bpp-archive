@@ -19,7 +19,7 @@ class User(db.Model):
 class Alias(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="SET NULL"), nullable=True)
     pages = db.relationship('Page', backref='author_alias', lazy=True)
 
 class Game(db.Model):

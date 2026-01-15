@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, abort, session, redirect, url_for, flash
 from models import db, User, Alias, Game, Book, Page, Character, AdminKey
-from sqlalchemy import or_, Date
+from sqlalchemy import Engine, or_, Date, event
 from functools import wraps
 import os
 from datetime import datetime
@@ -326,4 +326,4 @@ if __name__ == '__main__':
     
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'secret_key_for_sessions')
 
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

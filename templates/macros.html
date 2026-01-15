@@ -2,29 +2,34 @@
 <div class="panel-card">
     <div class="panel-content">
         {% if page.type == 'text' %}
-            <blockquote class="text-panel">
-                "{{ page.content_text }}"
-            </blockquote>
+        <blockquote class="text-panel">
+            "{{ page.content_text }}"
+        </blockquote>
         {% else %}
-             
-            <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}" class="img-fluid">
-            
-            {% if page.characters %}
-            <div class="panel-chars">
-                <small>Featuring: 
+
+        <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}" class="img-fluid">
+
+        {% if page.characters %}
+        <div class="panel-chars">
+            <small>Featuring:
                 {% for char in page.characters %}
-                    <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
+                <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
                 {% endfor %}
-                </small>
-            </div>
-            {% endif %}
+            </small>
+        </div>
+        {% endif %}
         {% endif %}
     </div>
     <div class="panel-footer">
         <small>
-            By <a href="{{ url_for('user_detail', user_id=page.author_alias.user.id) }}">
+            By
+            {% if page.author_alias.user %}
+            <a href="{{ url_for('user_detail', user_id=page.author_alias.user.id) }}">
                 {{ page.author_alias.name }}
             </a>
+            {% else %}
+            {{ page.author_alias.name }} <span class="text-muted">(Unlinked)</span>
+            {% endif %}
         </small>
     </div>
 </div>
@@ -39,10 +44,10 @@
     <a href="{{ url_for('book_detail', book_id=book.id) }}" class="text-decoration-none text-dark">
         <div class="preview-image">
             {% if first_image %}
-                 
-                <img src="{{ first_image.content_url }}" alt="Book Preview">
+
+            <img src="{{ first_image.content_url }}" alt="Book Preview">
             {% else %}
-                <div class="placeholder-img">No Image</div>
+            <div class="placeholder-img">No Image</div>
             {% endif %}
         </div>
         <div class="preview-caption">
@@ -51,9 +56,13 @@
     </a>
     {% if first_author %}
     <div class="preview-footer">
+        {% if first_author.user %}
         Started by <a href="{{ url_for('user_detail', user_id=first_author.user.id) }}">
             {{ first_author.name }}
         </a>
+        {% else %}
+        Started by {{ first_author.name }} <span class="text-muted">(Unlinked)</span>
+        {% endif %}
     </div>
     {% endif %}
 </div>

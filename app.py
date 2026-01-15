@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, abort, session, redirect, url_for, flash
 from models import db, User, Alias, Game, Book, Page, Character, AdminKey
-from sqlalchemy import or_
+from sqlalchemy import or_, Date
 from functools import wraps
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///brokenpicturephone.db'
@@ -96,7 +97,7 @@ def admin_auth():
 @app.route('/admin/dashboard')
 @admin_required
 def admin_dashboard():
-    return render_template('admin/dashboard.html')
+    return render_template('admin/dashboard.html', tables=MODEL_MAP.keys())
 
 # 3. The BPP Parser Logic (Dummy for now)
 @app.route('/admin/upload-game', methods=['POST'])
@@ -126,6 +127,83 @@ def add_admin_key():
     db.session.add(new_admin)
     db.session.commit()
     return "Key Added"
+
+# Map strings to models for dynamic routing
+MODEL_MAP = {
+    'users': User,
+    'aliases': Alias,
+    'games': Game,
+    'books': Book,
+    'pages': Page,
+    'characters': Character,
+    'admin_keys': AdminKey
+}
+
+@app.route('/admin/tables')
+@admin_required
+def list_tables():
+    return render_template('admin/tables_list.html', tables=MODEL_MAP.keys())
+
+@app.route('/admin/table/<table_name>')
+@admin_required
+def data_table_detail(table_name):
+    model = MODEL_MAP.get(table_name)
+    if not model:
+        return "Table not found", 404
+    items = model.query.all()
+    # Get column names for the headers
+    columns = model.__table__.columns.keys()
+    return render_template('admin/table_view.html', table_name=table_name, items=items, columns=columns)
+
+@app.route('/admin/table/<table_name>/edit/<int:item_id>', methods=['GET', 'POST'])
+@app.route('/admin/table/<table_name>/add', methods=['GET', 'POST'])
+@admin_required
+def edit_item(table_name, item_id=None):
+    model = MODEL_MAP.get(table_name)
+    columns = [c for c in model.__table__.columns if not c.primary_key]
+    item = model.query.get(item_id) if item_id else model()
+
+    if request.method == 'POST':
+        for col in columns:
+            val = request.form.get(col.name)
+            
+            if val == "" or val is None:
+                setattr(item, col.name, None)
+                continue
+
+            # --- THE FIX: Convert String to Date ---
+            if isinstance(col.type, Date):
+                try:
+                    # HTML <input type="date"> sends YYYY-MM-DD
+                    date_obj = datetime.strptime(val, '%Y-%m-%d').date()
+                    setattr(item, col.name, date_obj)
+                except ValueError:
+                    flash(f"Invalid date format for {col.name}")
+            else:
+                setattr(item, col.name, val)
+        
+        if not item_id:
+            db.session.add(item)
+            
+        db.session.commit()
+        flash(f"Item in {table_name} updated!")
+        return redirect(url_for('data_table_detail', table_name=table_name))
+
+    return render_template('admin/edit_item.html', table_name=table_name, item=item, columns=columns)
+
+@app.route('/admin/table/<table_name>/delete/<int:item_id>', methods=['POST'])
+@admin_required
+def delete_item(table_name, item_id):
+    model = MODEL_MAP.get(table_name)
+    item = model.query.get_or_404(item_id)
+    db.session.delete(item)
+    db.session.commit()
+    flash("Item deleted.")
+    return redirect(url_for('data_table_detail', table_name=table_name))
+
+@app.context_processor
+def utility_processor():
+    return dict(getattr=getattr)
 
 if __name__ == '__main__':
     with app.app_context():

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ "Edit" if item.id else "Add" }} Entry in {{ table_name }}</h2>
+
+<form method="POST" class="card p-4 shadow-sm">
+    {% for col in columns %}
+    <div class="mb-3">
+        <label class="form-label">{{ col.name|capitalize }}</label>
+        
+        {% set val = getattr(item, col.name) %}
+        
+        {% if col.type|string == 'TEXT' %}
+            <textarea name="{{ col.name }}" class="form-control">{{ val or '' }}</textarea>
+        
+        {% elif 'DATE' in col.type|string %}
+            <input type="date" name="{{ col.name }}" class="form-control" 
+                value="{{ val.strftime('%Y-%m-%d') if val else '' }}">
+        
+        {% else %}
+            <input type="text" name="{{ col.name }}" class="form-control" value="{{ val or '' }}">
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('data_table_detail', table_name=table_name) }}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

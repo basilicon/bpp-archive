@@ -5,13 +5,30 @@ from functools import wraps
 import os
 from datetime import datetime
 import uuid
-import base64
 from import_bpp import process_html_content
 import json
 from b2blaze import upload_b64img_to_b2, delete_b2_file
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///brokenpicturephone.db'
+
+# Get the database URL from environment variables (Render will provide this)
+# If no URL is found, fall back to your local SQLite file
+database_url = os.environ.get('DATABASE_URL')
+
+if database_url:
+    # Fix for Render/Supabase: they often provide 'postgres://' 
+    # but SQLAlchemy 1.4+ requires 'postgresql://'
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///brokenpicturephone.db'
+
+# Important for Postgres: prevents connection timeout issues
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 db.init_app(app)
 
 @app.route('/')

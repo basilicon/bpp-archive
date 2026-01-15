@@ -1,5 +1,6 @@
 Flask
 Flask-SQLAlchemy
+psycopg2-binary
 beautifulsoup4
 b2sdk
 python-dotenv

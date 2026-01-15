@@ -107,6 +107,16 @@ def user_detail(user_id):
     drawn_pages = Page.query.filter(Page.alias_id.in_(aliases_ids), Page.type == 'image').all()
     return render_template('user_detail.html', user=user, drawings=drawn_pages)
 
+@app.route('/characters')
+def character_list():
+    page = request.args.get('page', 1, type=int)
+    # Sort by name alphabetically
+    pagination = Character.query.order_by(Character.name.asc()).paginate(
+        page=page, per_page=12, error_out=False
+    )
+    characters = pagination.items
+    return render_template('character_list.html', characters=characters, pagination=pagination)
+
 @app.route('/character/<int:char_id>')
 def character_detail(char_id):
     character = Character.query.get_or_404(char_id)
@@ -435,6 +445,12 @@ def edit_game_name(game_id):
         flash("Game title updated!")
     
     return redirect(url_for('game_detail', game_id=game.id))
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    flash("Logged out successfully.")
+    return redirect(url_for('index'))
 
 @event.listens_for(Page, 'after_delete')
 def delete_page_file(mapper, connection, target):

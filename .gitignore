@@ -1,2 +1,12 @@
-instance/*
-__pycache__/*
+# Python environment
+venv/
+__pycache__/
+*.pyc
+
+# Database
+instance/
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db

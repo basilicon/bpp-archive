@@ -423,6 +423,19 @@ def update_image(model_type, item_id):
     flash(f"Updated {model_type} image!")
     return redirect(redirect_url)
 
+@app.route('/admin/edit-game-name/<int:game_id>', methods=['POST'])
+@admin_required
+def edit_game_name(game_id):
+    game = Game.query.get_or_404(game_id)
+    new_name = request.form.get('new_name')
+    
+    if new_name and new_name.strip():
+        game.title = new_name.strip()
+        db.session.commit()
+        flash("Game title updated!")
+    
+    return redirect(url_for('game_detail', game_id=game.id))
+
 @event.listens_for(Page, 'after_delete')
 def delete_page_file(mapper, connection, target):
     if target.type == 'image' and target.content_url:

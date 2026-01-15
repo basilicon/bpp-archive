@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request, abort
-from models import db, User, Alias, Game, Book, Page, Character
+from flask import Flask, render_template, request, abort, session, redirect, url_for, flash
+from models import db, User, Alias, Game, Book, Page, Character, AdminKey
 from sqlalchemy import or_
+from functools import wraps
+import os
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///brokenpicturephone.db'
@@ -67,7 +69,68 @@ def character_detail(char_id):
     character = Character.query.get_or_404(char_id)
     return render_template('character_detail.html', character=character)
 
+# Decorator to protect admin routes
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('is_admin'):
+            return "Unauthorized", 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+# 1. The "Login" Route (Sync / Auth)
+@app.route('/admin/auth')
+def admin_auth():
+    key = request.args.get('key')
+    # Check all stored admin hashes
+    all_keys = AdminKey.query.all()
+    for admin_key in all_keys:
+        if admin_key.check_key(key):
+            session['is_admin'] = True
+            flash("Admin access granted.")
+            return redirect(url_for('admin_dashboard'))
+    
+    return "Invalid Key", 403
+
+# 2. The Dashboard
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard():
+    return render_template('admin/dashboard.html')
+
+# 3. The BPP Parser Logic (Dummy for now)
+@app.route('/admin/upload-game', methods=['POST'])
+@admin_required
+def upload_game():
+    # Placeholder for your actual BPP parsing logic
+    # raw_data = request.files['game_file']
+    print("Parsing BPP game data...")
+    
+    # Example creation
+    new_game = Game(title="Imported Game")
+    db.session.add(new_game)
+    db.session.commit()
+    
+    flash("Game successfully parsed and uploaded!")
+    return redirect(url_for('admin_dashboard'))
+
+# 4. Manage Keys
+@app.route('/admin/keys/add', methods=['POST'])
+@admin_required
+def add_admin_key():
+    name = request.form.get('name')
+    plain_key = request.form.get('key')
+    
+    new_admin = AdminKey(key_name=name)
+    new_admin.set_key(plain_key)
+    db.session.add(new_admin)
+    db.session.commit()
+    return "Key Added"
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+    
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'secret_key_for_sessions')
+
     app.run(debug=True)

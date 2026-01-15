@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Admin Control Panel</h1>
+
+<div class="row mt-4">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">Upload BPP Game</div>
+            <div class="card-body">
+                <form action="{{ url_for('upload_game') }}" method="post" enctype="multipart/form-data">
+                    <input type="file" name="game_file" class="form-control mb-2">
+                    <button type="submit" class="btn btn-success">Parse & Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Access Keys</div>
+            <div class="card-body">
+                <form action="{{ url_for('add_admin_key') }}" method="post" class="mb-3">
+                    <input type="text" name="name" placeholder="User Name" class="form-control mb-1">
+                    <input type="password" name="key" placeholder="New Secret Key" class="form-control mb-1">
+                    <button type="submit" class="btn btn-sm btn-primary">Add New Key</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-warning">
+    <strong>Warning:</strong> These controls directly modify the production database.
+</div>
+{% endblock %}

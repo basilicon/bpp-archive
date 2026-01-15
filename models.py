@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -73,3 +74,14 @@ class Character(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     image_url = db.Column(db.String(200))
+
+class AdminKey(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key_name = db.Column(db.String(50)) # e.g., "Main Admin"
+    hash = db.Column(db.String(255), nullable=False)
+
+    def set_key(self, plain_key):
+        self.hash = generate_password_hash(plain_key)
+
+    def check_key(self, plain_key):
+        return check_password_hash(self.hash, plain_key)

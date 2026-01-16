@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, abort, session, redirect, url_for, flash
+from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context
 from models import db, User, Alias, Game, Book, Page, Character, AdminKey
 from sqlalchemy import Engine, or_, Date, event
 from functools import wraps
@@ -10,6 +10,8 @@ import json
 from b2blaze import upload_b64img_to_b2, delete_b2_file
 from dotenv import load_dotenv
 import base64
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
 load_dotenv()
 
@@ -190,90 +192,92 @@ def import_step1():
 @app.route('/admin/import/step2', methods=['POST'])
 @admin_required
 def import_step2():
-    #game_data = session.get('temp_game_data')
-    #if not game_data: return "Session expired", 400
-
     temp_filename = session.get('temp_game_data_file')
     if not temp_filename: return "Session expired", 400
     temp_filepath = os.path.join('instance', 'temp', temp_filename)
-    if not os.path.exists(temp_filepath):
-        return "Session expired", 400
+    
     with open(temp_filepath, 'r') as f:
         game_data = json.load(f)
-
-    # Get the mapping from the form: { 'AuthorName': 'user_id' or 'NEW' }
-    mapping = request.form
     
-    # 1. Process Game & Books
-    new_game = Game(date=datetime.fromisoformat(game_data['date']).date())
-    db.session.add(new_game)
-    db.session.flush()
-
-    user_cache = {} # Map author names to Alias objects
-
-    for book_data in game_data['books']:
-        new_book = Book(game_id=new_game.id)
-        db.session.add(new_book)
+    mapping = request.form.to_dict()
+    
+    # --- PRE-PROCESS USERS (Do this in the main thread to get IDs) ---
+    user_map = {} # Maps author_name string to Alias.id
+    for author_name, choice in mapping.items():
+        if choice == 'NEW':
+            u = User(true_name=author_name)
+            db.session.add(u)
+            db.session.flush() # Now u.id exists
+            alias = Alias(name=author_name, user_id=u.id)
+        else:
+            user_id = int(choice)
+            alias = Alias.query.filter_by(name=author_name, user_id=user_id).first()
+            if not alias:
+                alias = Alias(name=author_name, user_id=user_id)
+        
+        db.session.add(alias)
         db.session.flush()
+        user_map[author_name] = alias.id # Store the actual ID
 
-        for page_data in book_data['pages']:
-            author_name = page_data['author']
-            
-            # 2. Handle the mapping/alias logic
-            if author_name not in user_cache:
-                choice = mapping.get(author_name) # returns user_id or 'NEW'
+    db.session.commit() # Save the users so the background thread can see them
+
+    # 2. DEFINE THE BACKGROUND TASK
+    @copy_current_request_context
+    def run_combined_import(data, user_id_map, filepath):
+        with app.app_context():
+            try:
+                # A. Parallel Uploads First
+                image_tasks = []
+                for b in data['books']:
+                    for p in b['pages']:
+                        if p['type'] == 'drawing':
+                            image_tasks.append(p)
+
+                def upload_worker(page):
+                    # Injects the B2 URL directly into the page dict
+                    page['b2_url'] = upload_b64img_to_b2(page['content'])
+
+                # Fire off 10 uploads at a time in the background
+                with ThreadPoolExecutor(max_workers=10) as executor:
+                    executor.map(upload_worker, image_tasks)
+
+                # B. Database Insertion (Now fast since images are done)
+                new_game = Game(date=datetime.fromisoformat(data['date']).date())
+                db.session.add(new_game)
+                db.session.flush()
+
+                for book_data in data['books']:
+                    new_book = Book(game_id=new_game.id)
+                    db.session.add(new_book)
+                    db.session.flush()
+
+                    for page_data in book_data['pages']:
+                        p_type = 'image' if page_data['type'] == 'drawing' else 'text'
+                        content = page_data.get('b2_url') if p_type == 'image' else page_data['content']
+
+                        new_page = Page(
+                            book_id=new_book.id,
+                            alias_id=user_id_map[page_data['author']],
+                            sequence=page_data['sequence'],
+                            type=p_type,
+                            content_text=content if p_type == 'text' else None,
+                            content_url=content if p_type == 'image' else None
+                        )
+                        db.session.add(new_page)
                 
-                if choice == 'NEW':
-                    u = User(true_name=author_name)
-                    db.session.add(u)
-                    db.session.flush()
-                    user_id = u.id
-                else:
-                    user_id = int(choice)
+                db.session.commit()
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                
+            except Exception as e:
+                print(f"ASYNC IMPORT ERROR: {e}")
+                db.session.rollback()
 
-                # Find or create Alias for this user
-                alias = Alias.query.filter_by(name=author_name, user_id=user_id).first()
-                if not alias:
-                    alias = Alias(name=author_name, user_id=user_id)
-                    db.session.add(alias)
-                    db.session.flush()
-                user_cache[author_name] = alias
+    # 3. FIRE AND FORGET
+    thread = threading.Thread(target=run_combined_import, args=(game_data, user_map, temp_filepath))
+    thread.start()
 
-            # 3. Handle image saving to file system
-            p_type = 'image' if page_data['type'] == 'drawing' else 'text'
-            final_content = page_data['content']
-            
-            # Inside import_step2 loop
-            if p_type == 'image':
-                # Now returns a cloud URL instead of a local path
-                final_content = upload_b64img_to_b2(page_data['content'])
-            else:
-                final_content = page_data['content']
-
-            new_page = Page(
-                book_id=new_book.id,
-                alias_id=user_cache[author_name].id,
-                sequence=page_data['sequence'],
-                type=p_type,
-                content_text=final_content if p_type == 'text' else None,
-                content_url=final_content if p_type == 'image' else None # This is now the B2 URL
-            )
-
-            new_page = Page(
-                book_id=new_book.id,
-                alias_id=user_cache[author_name].id,
-                sequence=page_data['sequence'],
-                type=p_type,
-                content_text=final_content if p_type == 'text' else None,
-                content_url=final_content if p_type == 'image' else None
-            )
-            db.session.add(new_page)
-
-    # lastly, remove the temp file and session key
-    os.remove(temp_filepath)
-    db.session.commit()
-    session.pop('temp_game_data', None)
-    flash("Game successfully imported with mapped users!")
+    flash("Background import started! Check back in a few seconds.")
     return redirect(url_for('admin_dashboard'))
 
 # 4. Manage Keys

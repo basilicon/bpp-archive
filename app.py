@@ -133,24 +133,30 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# 1. The "Login" Route (Sync / Auth)
-@app.route('/admin/auth')
+# 1. The "Login" Route - Now handles the POST from your Navbar
+@app.route('/admin/auth', methods=['POST'])
 def admin_auth():
-    key = request.args.get('key')
-    # Check all stored admin hashes
+    # Use .form.get because the navbar uses a POST form
+    key = request.form.get('admin_key') 
+    
     all_keys = AdminKey.query.all()
     for admin_key in all_keys:
         if admin_key.check_key(key):
             session['is_admin'] = True
+            session.permanent = True # Keeps you logged in for a while
             flash("Admin access granted.")
+            # Redirect back to where you were, or dashboard if unknown
             return redirect(url_for('admin_dashboard'))
     
-    return "Invalid Key", 403
+    flash("Invalid Admin Key.")
+    return redirect(url_for('index'))
 
 # 2. The Dashboard
 @app.route('/admin/dashboard')
 @admin_required
 def admin_dashboard():
+    # needs to try to login here
+
     return render_template('admin/dashboard.html', tables=MODEL_MAP.keys())
 
 # 3. upload logic

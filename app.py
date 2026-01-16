@@ -184,6 +184,9 @@ def import_step1():
     
     # Fetch all existing users for the mapping dropdown
     existing_users = User.query.all()
+
+    # sort users by true_name
+    existing_users = sorted(existing_users, key=lambda u: u.true_name.lower())
     
     return render_template('admin/import_map.html', 
                            authors=sorted(list(found_authors)), 

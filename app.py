@@ -428,7 +428,7 @@ def update_image(model_type, item_id):
 
     image_bytes = image_file.read()
     b64_string = base64.b64encode(image_bytes).decode('utf-8')
-    new_url = upload_b64img_to_b2(b64_string)
+    new_url = upload_b64img_to_b2(b64_string, folder=model_type + 's') # Organize by model type in B2
 
     # 3. Update the Database
     if model_type == 'character':

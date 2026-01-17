@@ -7,17 +7,20 @@
         </blockquote>
         {% else %}
 
-            <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}" class="img-fluid">
 
-            {% if page.characters %}
-            <div class="panel-chars">
-                <small>Featuring:
-                    {% for char in page.characters %}
-                    <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
-                    {% endfor %}
-                </small>
-            </div>
-            {% endif %}
+        <a href="{{ url_for('panel_detail', page_id=page.id) }}">
+            <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}" class="img-fluid">
+        </a>
+
+        {% if page.characters %}
+        <div class="panel-chars">
+            <small>Featuring:
+                {% for char in page.characters %}
+                <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
+                {% endfor %}
+            </small>
+        </div>
+        {% endif %}
         {% endif %}
 
         {% if show_book %}

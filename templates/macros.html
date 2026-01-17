@@ -1,4 +1,4 @@
-{% macro panel_component(page) %}
+{% macro panel_component(page, show_book=True) %}
 <div class="panel-card">
     <div class="panel-content">
         {% if page.type == 'text' %}
@@ -7,17 +7,25 @@
         </blockquote>
         {% else %}
 
-        <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}" class="img-fluid">
+            <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}" class="img-fluid">
 
-        {% if page.characters %}
-        <div class="panel-chars">
-            <small>Featuring:
-                {% for char in page.characters %}
-                <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
-                {% endfor %}
+            {% if page.characters %}
+            <div class="panel-chars">
+                <small>Featuring:
+                    {% for char in page.characters %}
+                    <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
+                    {% endfor %}
+                </small>
+            </div>
+            {% endif %}
+        {% endif %}
+
+        {% if show_book %}
+        <div class="panel-book">
+            <small>
+                <a href="{{ url_for('book_detail', book_id=page.book.id) }}">From book {{page.book.id}}</a>
             </small>
         </div>
-        {% endif %}
         {% endif %}
     </div>
     <div class="panel-footer">

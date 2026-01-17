@@ -6,7 +6,7 @@
         <h2>Book #{{ book.id }}</h2>
         <div class="book-stream">
             {% for page in book.pages %}
-                {{ panel_component(page) }}
+                {{ panel_component(page, show_book=False) }}
                 
                 {% if not loop.last %}
                     <div class="connector">⬇</div>

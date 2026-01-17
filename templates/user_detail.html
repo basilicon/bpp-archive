@@ -2,22 +2,47 @@
 {% from 'macros.html' import panel_component %}
 
 {% block content %}
-    <div class="user-profile">
+    <div class="user-profile container mt-4">
         <h1>{{ user.true_name }}</h1>
-        <p>{{ user.description }}</p>
+        <p class="lead text-muted">{{ user.description }}</p>
         
-        <h3>Known Aliases</h3>
-        <ul>
-            {% for alias in user.aliases %}
-                <li>{{ alias.name }}</li>
-            {% endfor %}
-        </ul>
+        <hr>
 
-        <h3>Gallery (Panels Drawn)</h3>
-        <div class="gallery-grid">
-            {% for page in drawings %}
-                {{ panel_component(page) }}
+        <h3 class="mb-4">Gallery (Panels Drawn)</h3>
+        
+        {# row-cols-2: 2 cols on mobile #}
+        {# row-cols-md-3: 3 cols on tablets #}
+        {# row-cols-lg-5: 5 cols on desktop #}
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
+            {% for page in drawings.items %}
+                <div class="col">
+                    {{ panel_component(page) }}
+                </div>
             {% endfor %}
         </div>
+
+        <nav aria-label="Page navigation" class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if drawings.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('user_detail', user_id=user.id, page=drawings.prev_num) }}">Previous</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                <li class="page-item disabled">
+                    <span class="page-link text-dark">Page {{ drawings.page }} of {{ drawings.pages }}</span>
+                </li>
+
+                {% if drawings.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('user_detail', user_id=user.id, page=drawings.next_num) }}">Next</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
     </div>
 {% endblock %}

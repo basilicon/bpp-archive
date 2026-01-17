@@ -104,10 +104,26 @@ def book_detail(book_id):
 @app.route('/user/<int:user_id>')
 def user_detail(user_id):
     user = User.query.get_or_404(user_id)
-    # Get all pages drawn by any of the user's aliases
+    
+    # 1. Get the current page from the query string (default to 1)
+    page_num = request.args.get('page', 1, type=int)
+    
+    # 2. Define how many drawings to show per page
+    per_page = 20 
+    
+    # 3. Get alias IDs
     aliases_ids = [a.id for a in user.aliases]
-    drawn_pages = Page.query.filter(Page.alias_id.in_(aliases_ids), Page.type == 'image').all()
-    return render_template('user_detail.html', user=user, drawings=drawn_pages)
+    
+    # 4. Change .all() to .paginate()
+    # This returns a Pagination object instead of a list
+    drawings_pagination = Page.query.filter(
+        Page.alias_id.in_(aliases_ids), 
+        Page.type == 'image'
+    ).order_by(Page.id.desc()).paginate(page=page_num, per_page=per_page, error_out=False)
+    
+    return render_template('user_detail.html', 
+                           user=user, 
+                           drawings=drawings_pagination)
 
 @app.route('/characters')
 def character_list():

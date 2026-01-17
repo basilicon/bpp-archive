@@ -26,7 +26,7 @@
         {% if show_book %}
         <div class="panel-book">
             <small>
-                <a href="{{ url_for('book_detail', book_id=page.book.id) }}">From book {{page.book.id}}</a>
+                <a href="{{ url_for('book_detail', book_id=page.book.id) }}">View Full Book #{{page.book.id}}</a>
             </small>
         </div>
         {% endif %}

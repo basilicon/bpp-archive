@@ -44,11 +44,6 @@
     <div class="row">
         {% for page in character.pages %}
         <div class="col-md-4">
-            <div class="mb-2">
-                <a href="{{ url_for('book_detail', book_id=page.book_id) }}" class="btn btn-sm btn-outline-secondary">
-                    View Full Book #{{ page.book_id }}
-                </a>
-            </div>
             {{ panel_component(page) }}
         </div>
         {% endfor %}

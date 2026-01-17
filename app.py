@@ -397,6 +397,31 @@ def panel_detail(page_id):
     all_characters = Character.query.order_by(Character.name).all()
     return render_template('panel_detail.html', panel=panel, all_characters=all_characters)
 
+@app.route('/admin/add-character', methods=['POST'])
+@admin_required
+def add_character():
+    name = request.form.get('name')
+    panel = request.form.get('page_id')
+
+    # check if character with same name exists
+    if db.session.query(Character).filter_by(name=name).first():
+        flash("Character with that name already exists!")
+        return redirect(url_for('data_table_detail', table_name='characters'))
+
+    image_url = request.form.get('image_url')
+
+    new_character = Character(name=name, image_url=image_url)
+    db.session.add(new_character)
+
+    if panel:
+        page = Page.query.get(panel)
+        if page:
+            new_character.pages.append(page)
+
+    db.session.commit()
+    flash("Character added!")
+    return redirect(url_for('panel_detail', page_id=request.form.get('page_id')))
+
 @app.route('/admin/tag-character', methods=['POST'])
 @admin_required
 def tag_character():

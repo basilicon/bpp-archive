@@ -33,7 +33,7 @@ def upload_b64img_to_b2(base64_str, folder="panels"):
     # public_url = f"https://f005.backblazeb2.com/file/{B2_BUCKET_NAME}/{filename}"
 
     # we use cloudflare to serve the files, so the url is different
-    public_url = f"{IMAGE_SERVER_URL}/{filename}"
+    public_url = f"{IMAGE_SERVER_URL}/file/{B2_BUCKET_NAME}/{filename}"
 
     return public_url
 

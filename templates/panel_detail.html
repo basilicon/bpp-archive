@@ -37,17 +37,35 @@
 
                 <div class="card-body p-0">
                     {% if session.get('is_admin') %}
+                    <style>
+                        /* Ensure TomSelect takes up the remaining space but leaves room for the button */
+                        .input-group .ts-wrapper {
+                            flex: 1 1 auto;
+                            width: 1% !important; /* Forces the flexbox to calculate width correctly */
+                            min-width: 0;
+                        }
+
+                        /* Fixes border-radius issues when items are grouped */
+                        .input-group .ts-control {
+                            border-top-right-radius: 0 !important;
+                            border-bottom-right-radius: 0 !important;
+                        }
+                    </style>
+
                     <div class="p-3 border-bottom bg-light">
                         <label class="small fw-bold text-muted mb-1">Tag Existing:</label>
-                        <form action="{{ url_for('tag_character') }}" method="POST" class="d-flex gap-2 mb-3">
+                        <form action="{{ url_for('tag_character') }}" method="POST" class="mb-3">
                             <input type="hidden" name="page_id" value="{{ panel.id }}">
-                            <select id="char-search" name="character_id" placeholder="Search..." autocomplete="off">
-                                <option value="">Search characters...</option>
-                                {% for char in all_characters %}
-                                    <option value="{{ char.id }}">{{ char.name }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-success">Tag</button>
+                            
+                            <div class="input-group input-group-sm">
+                                <select id="char-search" name="character_id" placeholder="Search..." autocomplete="off">
+                                    <option value="">Search characters...</option>
+                                    {% for char in all_characters %}
+                                        <option value="{{ char.id }}">{{ char.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-success px-3" style="z-index: 5;">Tag</button>
+                            </div>
                         </form>
 
                         <hr>

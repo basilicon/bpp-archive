@@ -28,16 +28,15 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="d-flex align-items-center ms-auto">
-                    {% if session.get('is_admin') %}
+                    {% if not session.get('is_admin') %}
                         <form action="{{ url_for('admin_auth') }}" method="POST" class="d-flex gap-2">
-                        <input type="password" name="admin_key" class="form-control form-control-sm" placeholder="Admin Key" required>
-                        <button type="submit" class="btn btn-sm btn-primary">Login</button>
-                    </form>
-                    {% else %}
-                        <form action="{{ url_for('admin_auth') }}" method="POST" class="d-flex gap-2 mb-0">
-                            <input type="password" name="admin_key" class="form-control form-control-sm" 
-                                placeholder="Admin Key" aria-label="Login" required>
+                            <input type="password" name="admin_key" class="form-control form-control-sm" placeholder="Admin Key" required>
                             <button type="submit" class="btn btn-sm btn-primary">Login</button>
+                        </form>
+                    {% else %}
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm btn-outline-light me-2">Dashboard</a>
+                        <form action="{{ url_for('logout') }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-danger">Log Out</button>
                         </form>
                     {% endif %}
                 </div>

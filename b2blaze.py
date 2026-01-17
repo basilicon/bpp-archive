@@ -10,18 +10,19 @@ load_dotenv()  # Load environment variables from .env file
 B2_KEY_ID = os.getenv("B2_KEY_ID", "your_key_id")
 B2_APPLICATION_KEY = os.getenv("B2_APPLICATION_KEY", "your_application_key")
 B2_BUCKET_NAME = os.getenv("B2_BUCKET_NAME", "your_bucket_name")
+IMAGE_SERVER_URL = os.getenv("IMAGE_SERVER_URL", "https://images.freefnafgamesbecauseipiratedthem.com/")
 
 info = InMemoryAccountInfo()
 b2_api = B2Api(info)
 b2_api.authorize_account("production", B2_KEY_ID, B2_APPLICATION_KEY)
 bucket = b2_api.get_bucket_by_name(B2_BUCKET_NAME)
 
-def upload_b64img_to_b2(base64_str):
+def upload_b64img_to_b2(base64_str, folder="panels"):
     if "base64," in base64_str:
         base64_str = base64_str.split("base64,")[1]
     
     image_data = base64.b64decode(base64_str)
-    filename = f"panels/{uuid.uuid4()}.png"
+    filename = f"{folder}/{uuid.uuid4()}.png"
     
     # Upload to B2
     file_info = bucket.upload_bytes(image_data, filename)
@@ -29,7 +30,11 @@ def upload_b64img_to_b2(base64_str):
     # Construct the public URL
     # Format: https://f005.backblazeb2.com/file/BUCKET_NAME/FILENAME
     # Note: Check your B2 bucket settings to find your specific "Friendly URL" endpoint
-    public_url = f"https://f005.backblazeb2.com/file/{B2_BUCKET_NAME}/{filename}"
+    # public_url = f"https://f005.backblazeb2.com/file/{B2_BUCKET_NAME}/{filename}"
+
+    # we use cloudflare to serve the files, so the url is different
+    public_url = f"{IMAGE_SERVER_URL}/file/{B2_BUCKET_NAME}/{filename}"
+
     return public_url
 
 def delete_b2_file(file_url):
@@ -47,8 +52,3 @@ def delete_b2_file(file_url):
     except Exception as e:
         print(f"Error deleting file from B2: {e}")
         return False    
-    
-if __name__ == "__main__":
-    # delete test
-    # delete_b2_file(f"https://f005.backblazeb2.com/file/{B2_BUCKET_NAME}/blue_tower.png")
-    pass

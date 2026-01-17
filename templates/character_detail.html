@@ -38,20 +38,50 @@
 
     <hr>
 
-    <h3 class="mb-4">Appearances ({{ character.pages|length }})</h3>
+    <h3 class="mb-4">Appearances ({{ drawings.total }})</h3>
 
-    {% if character.pages %}
-    <div class="row">
-        {% for page in character.pages %}
-        <div class="col-md-4">
-            {{ panel_component(page) }}
+    {% if drawings.items %}
+        {# 5-column grid layout #}
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
+            {% for page in drawings.items %}
+                <div class="col">
+                    {{ panel_component(page) }}
+                </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
+
+        {# Pagination Navigation #}
+        <nav aria-label="Page navigation" class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if drawings.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('character_detail', char_id=character.id, page=drawings.prev_num) }}">Previous</a>
+                    </li>
+                {% endif %}
+
+                {% for p in drawings.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                    {% if p %}
+                        <li class="page-item {{ 'active' if p == drawings.page else '' }}">
+                            <a class="page-link" href="{{ url_for('character_detail', char_id=character.id, page=p) }}">{{ p }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if drawings.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('character_detail', char_id=character.id, page=drawings.next_num) }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+
     {% else %}
-    <div class="alert alert-light text-center">
-        This character hasn't appeared in any panels yet.
-    </div>
+        <div class="alert alert-light text-center py-5 shadow-sm">
+            <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+            <p class="mt-2">This character hasn't appeared in any panels yet.</p>
+        </div>
     {% endif %}
 </div>
 {% endblock %}

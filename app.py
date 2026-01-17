@@ -136,7 +136,7 @@ def character_list():
      .group_by(Character.id) \
      .order_by(func.count(Page.id).desc()) \
      .paginate(
-        page=page, per_page=12, error_out=False
+        page=page, per_page=18, error_out=False
     )
     characters = pagination.items
     return render_template('character_list.html', characters=characters, pagination=pagination)
@@ -144,7 +144,20 @@ def character_list():
 @app.route('/character/<int:char_id>')
 def character_detail(char_id):
     character = Character.query.get_or_404(char_id)
-    return render_template('character_detail.html', character=character)
+    
+    # Get current page from URL
+    page_num = request.args.get('page', 1, type=int)
+    per_page = 15  # 5 columns x 3 rows looks great on a grid
+    
+    # Query Pages that are associated with this character
+    # We use .any(id=char_id) for many-to-many relationships
+    pagination = Page.query.filter(Page.characters.any(id=char_id)) \
+        .order_by(Page.id.desc()) \
+        .paginate(page=page_num, per_page=per_page, error_out=False)
+        
+    return render_template('character_detail.html', 
+                           character=character, 
+                           drawings=pagination)
 
 # Decorator to protect admin routes
 def admin_required(f):

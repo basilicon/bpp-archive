@@ -8,7 +8,7 @@
     </div>
 
     <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
-        {% for char in characters %}
+        {% for char, count in characters %}
         <div class="col text-center">
             <a href="{{ url_for('character_detail', char_id=char.id) }}" class="text-decoration-none text-dark">
                 <div class="card h-100 border-0 shadow-sm hover-shadow">
@@ -17,7 +17,7 @@
                          style="width: 140px; height: 140px; object-fit: cover;">
                     <div class="card-body pt-0">
                         <h6 class="card-title fw-bold mb-1">{{ char.name }}</h6>
-                        <small class="text-muted">{{ char.pages|length }} appearances</small>
+                        <small class="text-muted">{{ count }} {{ 'appearance' if count == 1 else 'appearances' }}</small>
                     </div>
                 </div>
             </a>

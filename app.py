@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context
 from models import db, User, Alias, Game, Book, Page, Character, AdminKey
-from sqlalchemy import Engine, or_, Date, event
+from sqlalchemy import Engine, or_, Date, event, func
 from functools import wraps
 import os
 from datetime import datetime
@@ -129,7 +129,13 @@ def user_detail(user_id):
 def character_list():
     page = request.args.get('page', 1, type=int)
     # Sort by name alphabetically
-    pagination = Character.query.order_by(Character.name.asc()).paginate(
+    pagination = characters_with_counts = db.session.query(
+        Character, 
+        func.count(Page.id).label('appearance_count')
+    ).outerjoin(Character.pages) \
+     .group_by(Character.id) \
+     .order_by(func.count(Page.id).desc()) \
+     .paginate(
         page=page, per_page=12, error_out=False
     )
     characters = pagination.items

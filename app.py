@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context
-from models import db, User, Alias, Game, Book, Page, Character, AdminKey
+from models import db, User, Alias, Game, Book, Page, Character, AdminKey, DailyChallenge
 from sqlalchemy import Engine, or_, Date, event, func
 from functools import wraps
 import os
-from datetime import datetime
+from datetime import datetime, date
+import random
 import uuid
 from import_bpp import process_html_content
 import json
@@ -12,6 +13,7 @@ from dotenv import load_dotenv
 import base64
 from concurrent.futures import ThreadPoolExecutor
 import threading
+import pytz
 
 load_dotenv()
 
@@ -38,8 +40,15 @@ db.init_app(app)
 @app.route('/')
 def index():
     # Show the 3 most recent games at the top
-    recent_games = Game.query.order_by(Game.date.desc()).limit(3).all()
-    return render_template('index.html', recent_games=recent_games)
+    recent_games = Game.query.order_by(Game.date.desc()).limit(4).all()
+
+    # Get today's challenge ID to pass to the JS
+    tz = pytz.timezone('America/New_York')
+    today_date = datetime.now(tz).date()
+    challenge = DailyChallenge.query.filter_by(date=today_date).first()
+    challenge_id = challenge.id if challenge else None
+
+    return render_template('index.html', recent_games=recent_games, challenge_id=challenge_id)
 
 @app.route('/search')
 def search():
@@ -158,6 +167,46 @@ def character_detail(char_id):
     return render_template('character_detail.html', 
                            character=character, 
                            drawings=pagination)
+
+@app.route('/daily')
+def daily_game():
+    # 1. Get Today's Date in EST
+    tz = pytz.timezone('America/New_York')
+    today_date = datetime.now(tz).date()
+
+    # 2. Check if the challenge already exists
+    challenge = DailyChallenge.query.filter_by(date=today_date).first()
+
+    if not challenge:
+        # Generate it for the first time today
+        daily_panel = Page.query.join(Alias)\
+                            .filter(Page.type == 'image', Alias.user_id != None)\
+                            .order_by(func.random())\
+                            .first()
+        daily_panel_id = daily_panel.id
+        challenge = DailyChallenge(date=today_date, page_id=daily_panel_id)
+        db.session.add(challenge)
+        db.session.commit()
+
+    # 3. Use the stored panel
+    panel = challenge.panel
+    
+    # Get the first text prompt for the clue
+    first_prompt = Page.query.filter_by(book_id=panel.book_id, type='text')\
+                             .order_by(Page.sequence.asc()).first()
+    
+    correct_author_id = panel.author_alias.user_id if panel.author_alias else None
+
+    authors = User.query.all()
+    # sort authors by true_name
+    authors = sorted(authors, key=lambda u: u.true_name.lower())
+    
+    return render_template('daily.html', 
+                           panel=panel, 
+                           challenge=challenge,
+                           correct_author_id=correct_author_id,
+                           first_prompt=first_prompt, 
+                           authors=authors)
 
 # Decorator to protect admin routes
 def admin_required(f):

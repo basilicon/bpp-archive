@@ -1,24 +1,107 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="p-5 mb-4 bg-light rounded-3 text-center">
-    <h1 class="display-5 fw-bold">Broken Picturephone Archive</h1>
-    <p class="fs-4">Relive the chaos of past drawings.</p>
-    <a href="{{ url_for('game_list') }}" class="btn btn-primary btn-lg">Browse All Games</a>
-    <a href="{{ url_for('character_list') }}" class="btn btn-primary btn-lg">Browse Characters</a>
-</div>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="p-5 mb-4 bg-light rounded-3 shadow-sm text-center">
+                <h1 class="display-5 fw-bold">Broken Picturephone Archive</h1>
+                <p class="fs-5 text-muted">Relive the chaos of past drawings.</p>
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <a href="{{ url_for('game_list') }}" class="btn btn-primary btn-lg px-4 gap-3">Browse Games</a>
+                    <a href="{{ url_for('character_list') }}" class="btn btn-outline-secondary btn-lg px-4">Characters</a>
+                </div>
+            </div>
 
-<h3>Recently Added Games</h3>
-<div class="row">
-    {% for game in recent_games %}
-    <div class="col-md-4">
-        <div class="card mb-4 shadow-sm">
-            <img src="{{ game.get_preview_image() }}" class="card-img-top" style="height: 200px; object-fit: cover;">
-            <div class="card-body text-center">
-                <h5>{{ game.display_title }}</h5>
-                <a href="{{ url_for('game_detail', game_id=game.id) }}" class="btn btn-outline-primary">View</a>
+            <h3 class="mb-4">Recently Added Games</h3>
+            <div class="row row-cols-1 row-cols-md-2 g-4">
+                {% for game in recent_games %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0">
+                        <img src="{{ game.get_preview_image() }}" class="card-img-top" style="height: 180px; object-fit: cover;">
+                        <div class="card-body text-center">
+                            <h5 class="card-title h6">{{ game.display_title }}</h5>
+                            <a href="{{ url_for('game_detail', game_id=game.id) }}" class="btn btn-sm btn-outline-primary mt-2">View Game</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-primary text-center sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">📅 Daily Challenge</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-1">NEW PANEL IN:</p>
+                    <div id="countdown" class="display-6 fw-bold text-primary mb-3">00:00:00</div>
+                    
+                    <div class="d-grid">
+                        <a href="{{ url_for('daily_game') }}" id="daily-btn" class="btn btn-success btn-lg mb-3">
+                            Play Today's Panel
+                        </a>
+                    </div>
+
+                    <div id="index-streak-display" class="d-none">
+                        <span class="badge rounded-pill bg-warning text-dark border p-2 px-3">
+                            🔥 <span id="streak-num">0</span> Day Streak
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    {% endfor %}
 </div>
+
+<script>
+function updateTimer() {
+    const now = new Date();
+    const estDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    
+    const tomorrow = new Date(estDate);
+    tomorrow.setDate(estDate.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    const diff = tomorrow - estDate;
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    document.getElementById('countdown').innerHTML = 
+        `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+setInterval(updateTimer, 1000);
+updateTimer();
+
+document.addEventListener('DOMContentLoaded', () => {
+    const challengeId = {{ challenge_id | tojson }};
+    const dailyBtn = document.getElementById('daily-btn');
+    
+    // 1. Check if the user has finished today's game
+    if (challengeId) {
+        const savedState = localStorage.getItem(`daily_game_${challengeId}`);
+        if (savedState) {
+            const data = JSON.parse(savedState);
+            if (data.gameOver) {
+                dailyBtn.innerText = "Review Today's Result";
+                dailyBtn.classList.remove('btn-success');
+                dailyBtn.classList.add('btn-outline-primary');
+            }
+        }
+    }
+
+    const streakData = JSON.parse(localStorage.getItem('daily_panel_streak'));
+    if (streakData && streakData.count > 0) {
+        const display = document.getElementById('index-streak-display');
+        const num = document.getElementById('streak-num');
+        if (display && num) {
+            display.classList.remove('d-none');
+            num.innerText = streakData.count;
+        }
+    }
+});
+</script>
 {% endblock %}

@@ -88,3 +88,11 @@ class AdminKey(db.Model):
 
     def check_key(self, plain_key):
         return check_password_hash(self.hash, plain_key)
+
+class DailyChallenge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, unique=True, nullable=False) # e.g., 2026-01-17
+    page_id = db.Column(db.Integer, db.ForeignKey('page.id'), nullable=False)
+    
+    # Relationship to get the panel easily
+    panel = db.relationship('Page', backref='daily_challenges')

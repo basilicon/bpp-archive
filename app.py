@@ -359,12 +359,18 @@ def import_step2():
                         db.session.add(new_page)
                 
                 db.session.commit()
-                if os.path.exists(filepath):
-                    os.remove(filepath)
+                
+                # Explicitly clean up
+                del data
+                db.session.remove()
+                gc.collect() # Force Python to release memory back to the OS
                 
             except Exception as e:
                 print(f"ASYNC IMPORT ERROR: {e}")
                 db.session.rollback()
+            finally:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
 
     # 3. FIRE AND FORGET
     thread = threading.Thread(target=run_combined_import, args=(game_data, user_map, temp_filepath))

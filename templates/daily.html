@@ -144,10 +144,11 @@
         if (guesses >= 2) document.getElementById('clue-2').classList.remove('d-none');
         if (guesses >= 3) document.getElementById('clue-3').classList.remove('d-none');
         if (guesses >= 4) document.getElementById('clue-4').classList.remove('d-none');
+        if (guesses >= 5) document.getElementById('clue-5').classList.remove('d-none');
         
         // Start reducing blur slightly with each wrong guess (optional touch)
         const img = document.getElementById('daily-image');
-        if (guesses < 5) {
+        if (guesses < 6) {
             img.style.filter = `blur(${20 - (guesses * 4)}px)`;
         }
     }

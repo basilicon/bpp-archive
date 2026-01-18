@@ -378,7 +378,7 @@ def import_step2():
 @admin_required
 def add_admin_key():
     name = request.form.get('name')
-    plain_key = request.form.get('key')
+    plain_key = request.form.get('key').strip()
     
     new_admin = AdminKey(key_name=name)
     new_admin.set_key(plain_key)

@@ -418,11 +418,27 @@ def data_table_detail(table_name):
     model = MODEL_MAP.get(table_name)
     if not model:
         return "Table not found", 404
-    items = model.query.all()
-    # Get column names for the headers
-    columns = model.__table__.columns.keys()
-    return render_template('admin/table_view.html', table_name=table_name, items=items, columns=columns)
 
+    # 1. Get the current page from the URL (?page=1)
+    page = request.args.get('page', 1, type=int)
+    per_page = 25  # Keep this low for the Free Tier memory limit
+
+    # 2. Use paginate instead of all()
+    # error_out=False prevents 404s if a user enters a page that doesn't exist
+    pagination = model.query.order_by(model.id.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    items = pagination.items
+    columns = model.__table__.columns.keys()
+
+    return render_template(
+        'admin/table_view.html', 
+        table_name=table_name, 
+        items=items, 
+        columns=columns, 
+        pagination=pagination # Pass the whole pagination object to the HTML
+    )
 @app.route('/admin/table/<table_name>/edit/<int:item_id>', methods=['GET', 'POST'])
 @app.route('/admin/table/<table_name>/add', methods=['GET', 'POST'])
 @admin_required

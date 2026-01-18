@@ -33,7 +33,11 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///brokenpicturephone.db'
 
 # Important for Postgres: prevents connection timeout issues
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_pre_ping": True,
+    "pool_size": 5,
+    "max_overflow": 0 # don't allow extra connections beyond pool_size
+}
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-for-sessions')
 db.init_app(app)
 
@@ -197,7 +201,7 @@ def daily_game():
     
     correct_author_id = panel.author_alias.user_id if panel.author_alias else None
 
-    authors = User.query.all()
+    authors = db.session.query(User.id, User.true_name).all()
     # sort authors by true_name
     authors = sorted(authors, key=lambda u: u.true_name.lower())
     

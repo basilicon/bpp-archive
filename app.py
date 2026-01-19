@@ -79,6 +79,21 @@ def search():
 
     return render_template('search.html', query=query, books=books, characters=characters, users=users, games=games)
 
+@app.route('/panel/<int:page_id>')
+def panel_detail(page_id):
+    panel = Page.query.get_or_404(page_id)
+    all_characters = Character.query.order_by(Character.name).all()
+    return render_template('panel_detail.html', panel=panel, all_characters=all_characters)
+
+@app.route('/panel/random')
+def panel_random():
+    # Get a random panel (image page)
+    random_panel = Page.query.filter(Page.type == 'image').order_by(func.random()).first()
+    if not random_panel:
+        abort(404)
+    all_characters = Character.query.order_by(Character.name).all()
+    return render_template('panel_detail.html', panel=random_panel, all_characters=all_characters)
+
 @app.route('/game/<int:game_id>')
 def game_detail(game_id):
     game = Game.query.get_or_404(game_id)
@@ -487,12 +502,6 @@ def delete_item(table_name, item_id):
     db.session.commit()
     flash("Item deleted.")
     return redirect(url_for('data_table_detail', table_name=table_name))
-
-@app.route('/panel/<int:page_id>')
-def panel_detail(page_id):
-    panel = Page.query.get_or_404(page_id)
-    all_characters = Character.query.order_by(Character.name).all()
-    return render_template('panel_detail.html', panel=panel, all_characters=all_characters)
 
 @app.route('/admin/add-character', methods=['POST'])
 @admin_required

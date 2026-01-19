@@ -14,6 +14,7 @@ import base64
 from concurrent.futures import ThreadPoolExecutor
 import threading
 import pytz
+import gc
 
 load_dotenv()
 

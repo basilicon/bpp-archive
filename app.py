@@ -74,7 +74,10 @@ def search():
     # 3. Users by True Name
     users = User.query.filter(User.true_name.ilike(f'%{query}%')).all()
 
-    return render_template('search.html', query=query, books=books, characters=characters, users=users)
+    # 4. Games by Title
+    games = Game.query.filter(Game.title.ilike(f'%{query}%')).all()
+
+    return render_template('search.html', query=query, books=books, characters=characters, users=users, games=games)
 
 @app.route('/game/<int:game_id>')
 def game_detail(game_id):

@@ -3,7 +3,7 @@ name: Deploy to RackNerd
 on:
   push:
     branches:
-      - vps-migrate-2  # Change this if your default branch is different
+      - main  # Change this if your default branch is different
 
 jobs:
   deploy:

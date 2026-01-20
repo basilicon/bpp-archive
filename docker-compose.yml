@@ -2,6 +2,8 @@ services:
   flask-app:
     build: .
     restart: always
+    env_file:
+      - .env
     expose:
       - "8000"
 

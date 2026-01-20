@@ -17,11 +17,12 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_IP }}
-          username: ${{ secrets.VPS_USER }} # Usually 'root'
+          username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/my-flask-app
+            cd /var/www/bpp-archive
             git pull origin main
-            source venv/bin/activate
-            pip install -r requirements.txt
-            sudo systemctl restart flask_app
+            # The --build flag ensures your latest code changes are included
+            docker compose up -d --build
+            # Optional: Clean up old, unused images to save disk space
+            docker image prune -f

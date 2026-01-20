@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: VPS racknerd
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

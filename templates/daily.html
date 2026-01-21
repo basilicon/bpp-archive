@@ -60,7 +60,7 @@
 
 <style>
     .blur-effect { 
-        filter: blur(20px); 
+        filter: blur(15px); 
         transition: filter 0.5s ease; 
         pointer-events: none;
     }
@@ -149,7 +149,7 @@
         // Start reducing blur slightly with each wrong guess (optional touch)
         const img = document.getElementById('daily-image');
         if (guesses < 6) {
-            img.style.filter = `blur(${20 - (guesses * 4)}px)`;
+            img.style.filter = `blur(${15 - (guesses * 3)}px)`;
         }
     }
 

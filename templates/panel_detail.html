@@ -1,4 +1,9 @@
 {% extends 'base.html' %}
+
+{% block og_title %}Panel #{{ panel.sequence }} from Book #{{ panel.book.id }}{% endblock %}
+{% block og_desc %}Created by {{ panel.author_alias.name }}{% endblock %}
+{% block og_image %}{{ panel.content_url }}{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <nav aria-label="breadcrumb">

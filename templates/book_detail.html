@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% from 'macros.html' import panel_component %}
 
+{% block og_title %}Book: {{ book.get_preview_text() }}{% endblock %}
+{% block og_desc %}{{ book.game.date }}{% endblock %}
+{% block og_image %}{{ book.get_preview_image() }}{% endblock %}
+
 {% block content %}
     <div class="container">
         <h2>Book #{{ book.id }}</h2>

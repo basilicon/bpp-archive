@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% from 'macros.html' import panel_component %}
 
+{% block og_title %}Character: {{ character.name }}{% endblock %}
+{% block og_desc %}View all {{ character.pages|length }} panels featuring {{ character.name }} in the archive.{% endblock %}
+{% block og_image %}{{ character.image_url }}{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-5 align-items-center">

@@ -57,6 +57,18 @@ class Book(db.Model):
 
     def get_first_image_page(self):
         return self.pages.filter_by(type='image').first()
+    
+    def get_preview_text(self):
+        first_text = self.get_first_text_page()
+        if first_text:
+            return first_text.content_text
+        return "Unnamed book."
+
+    def get_preview_image(self):
+        first_img = self.get_first_image_page()
+        if first_img:
+            return first_img.content_url
+        return None
 
 class Page(db.Model):
     id = db.Column(db.Integer, primary_key=True)

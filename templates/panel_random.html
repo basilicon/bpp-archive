@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block og_title %}🎲 Broken Picturephone Roulette{% endblock %}
+{% block og_desc %}Click to see a random, chaotic panel from the archives!{% endblock %}
+
+{% block content %}
+<div class="container mt-4 text-center">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🎲 Panel Roulette</h2>
+        <button onclick="fetchRandomPanel()" class="btn btn-primary btn-lg shadow">
+            <i class="bi bi-dice-5"></i> Roll Another
+        </button>
+    </div>
+
+    <div class="card shadow-lg mx-auto" style="max-width: 700px;">
+        <div id="loading-spinner" class="py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">Finding something cool...</p>
+        </div>
+
+        <div id="panel-display" class="d-none">
+            <div class="p-2 bg-dark text-white small">
+                From the book: <em id="panel-prompt"></em>
+            </div>
+            
+            <img src="" id="panel-img" class="img-fluid border-bottom" alt="Random Panel">
+            
+            <div class="card-body">
+                <p class="mb-2">Drawn by: <strong id="panel-author"></strong></p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="" id="view-book-btn" class="btn btn-sm btn-outline-secondary">View Full Book</a>
+                    <button onclick="copyPanelLink()" class="btn btn-sm btn-outline-info">Share Panel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function fetchRandomPanel() {
+        const display = document.getElementById('panel-display');
+        const loader = document.getElementById('loading-spinner');
+        
+        // UI reset
+        display.classList.add('d-none');
+        loader.classList.remove('d-none');
+
+        try {
+            const response = await fetch('/api/panel/random');
+            const data = await response.json();
+
+            // Populate data
+            document.getElementById('panel-img').src = data.content_url;
+            document.getElementById('panel-author').innerText = data.author;
+            document.getElementById('panel-prompt').innerText = `"${data.prompt}"`;
+            document.getElementById('view-book-btn').href = `/book/${data.book_id}`;
+            
+            // Set current ID for sharing
+            window.currentPanelId = data.id;
+
+            // Show display
+            display.classList.remove('d-none');
+            loader.classList.add('d-none');
+        } catch (err) {
+            alert("Error fetching panel. Try again!");
+        }
+    }
+
+    function copyPanelLink() {
+        const url = `${window.location.origin}/panel/${window.currentPanelId}`;
+        navigator.clipboard.writeText(url).then(() => alert("Link copied!"));
+    }
+
+    // Load first panel on start
+    window.onload = fetchRandomPanel;
+</script>
+{% endblock %}

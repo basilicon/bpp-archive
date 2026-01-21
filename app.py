@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context
+from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context, jsonify
 from models import db, User, Alias, Game, Book, Page, Character, AdminKey, DailyChallenge
 from sqlalchemy import Engine, or_, Date, event, func
 from functools import wraps
@@ -88,12 +88,26 @@ def panel_detail(page_id):
 
 @app.route('/panel/random')
 def panel_random():
-    # Get a random panel (image page)
-    random_panel = Page.query.filter(Page.type == 'image').order_by(func.random()).first()
-    if not random_panel:
-        abort(404)
-    all_characters = Character.query.order_by(Character.name).all()
-    return render_template('panel_detail.html', panel=random_panel, all_characters=all_characters)
+    # This just loads the empty "shell" page
+    return render_template('panel_random.html')
+
+@app.route('/api/panel/random')
+def api_panel_random():
+    # Get a random panel
+    panel = Page.query.filter(Page.type == 'image').order_by(func.random()).first()
+    
+    if not panel:
+        return jsonify({"error": "No panels found"}), 404
+
+    # Prepare data for JSON
+    return jsonify({
+        "id": panel.id,
+        "content_url": panel.content_url,
+        "book_id": panel.book_id,
+        "author": panel.author_alias.name,
+        "prompt": panel.book.pages[0].content_text, # The first text page
+        "sequence": panel.sequence
+    })
 
 @app.route('/game/<int:game_id>')
 def game_detail(game_id):

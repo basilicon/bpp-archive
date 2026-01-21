@@ -83,7 +83,11 @@ def search():
 @app.route('/panel/<int:page_id>')
 def panel_detail(page_id):
     panel = Page.query.get_or_404(page_id)
-    all_characters = Character.query.order_by(Character.name).all()
+
+    all_characters = []
+    # Don't load all characters unless admin, save bandwidth
+    if session.get('is_admin'):
+        all_characters = Character.query.order_by(Character.name).all()
     return render_template('panel_detail.html', panel=panel, all_characters=all_characters)
 
 @app.route('/panel/random')

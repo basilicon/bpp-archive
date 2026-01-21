@@ -3,7 +3,7 @@ name: Deploy to RackNerd
 on:
   push:
     branches:
-      - main  # Change this if your default branch is different
+      - production
 
 jobs:
   deploy:

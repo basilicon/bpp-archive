@@ -118,6 +118,8 @@
             saveState(false);
             
             if (selectEl.tomselect) selectEl.tomselect.clear();
+
+            selectEl.removeChild(selectEl.querySelector(`option[value="${val}"]`));
             
             if (guesses >= 6) {
                 endGame(false);

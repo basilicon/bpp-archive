@@ -7,9 +7,14 @@
 <div class="container mt-4 text-center">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>🎲 Panel Roulette</h2>
-        <button onclick="fetchRandomPanel()" class="btn btn-primary btn-lg shadow">
-            <i class="bi bi-dice-5"></i> Roll Another
-        </button>
+        <div class="d-flex justify-content-center gap-2 mt-3">
+            <button onclick="fetchRandomPanel(false)" class="btn btn-primary shadow">
+                <i class="bi bi-dice-5"></i> Random Panel
+            </button>
+            <button onclick="fetchRandomPanel(true)" class="btn btn-warning shadow">
+                <i class="bi bi-tag-fill"></i> Find Untagged
+            </button>
+        </div>
     </div>
 
     <div class="card shadow-lg mx-auto" style="max-width: 700px;">
@@ -37,41 +42,41 @@
 </div>
 
 <script>
-    async function fetchRandomPanel() {
+    async function fetchRandomPanel(untagged = false) {
         const display = document.getElementById('panel-display');
         const loader = document.getElementById('loading-spinner');
         
-        // UI reset
         display.classList.add('d-none');
         loader.classList.remove('d-none');
 
+        // Construct the URL with the filter parameter
+        let url = '/api/panel/random';
+        if (untagged) {
+            url += '?untagged=true';
+        }
+
         try {
-            const response = await fetch('/api/panel/random');
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Not found');
+            
             const data = await response.json();
 
-            // Populate data
             document.getElementById('panel-img').src = data.content_url;
             document.getElementById('panel-author').innerText = data.author;
             document.getElementById('panel-prompt').innerText = `"${data.prompt}"`;
             document.getElementById('view-book-btn').href = `/book/${data.book_id}`;
             
-            // Set current ID for sharing
             window.currentPanelId = data.id;
 
-            // Show display
             display.classList.remove('d-none');
             loader.classList.add('d-none');
         } catch (err) {
-            alert("Error fetching panel. Try again!");
+            loader.classList.add('d-none');
+            alert(untagged ? "No untagged panels left! (Or an error occurred)" : "Error fetching panel.");
         }
     }
 
-    function copyPanelLink() {
-        const url = `${window.location.origin}/panel/${window.currentPanelId}`;
-        navigator.clipboard.writeText(url).then(() => alert("Link copied!"));
-    }
-
-    // Load first panel on start
-    window.onload = fetchRandomPanel;
+    // Load a standard random panel on start
+    window.onload = () => fetchRandomPanel(false);
 </script>
 {% endblock %}

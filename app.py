@@ -97,8 +97,15 @@ def panel_random():
 
 @app.route('/api/panel/random')
 def api_panel_random():
+    untagged_only = request.args.get('untagged', 'false').lower() == 'true'
+
     # Get a random panel
-    panel = Page.query.filter(Page.type == 'image').order_by(func.random()).first()
+    panel = Page.query.filter(Page.type == 'image')
+
+    if untagged_only:
+        panel = panel.filter(~Page.characters.any())
+
+    panel = panel.order_by(func.random()).first()
     
     if not panel:
         return jsonify({"error": "No panels found"}), 404

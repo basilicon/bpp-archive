@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context, jsonify
 from models import db, User, Alias, Game, Book, Page, Character, AdminKey, DailyChallenge
-from sqlalchemy import Engine, or_, Date, event, func
+from sqlalchemy import Engine, or_, Date, event, func, text
+from sqlalchemy.exc import IntegrityError
 from functools import wraps
 import os
 from datetime import datetime, date
@@ -218,23 +219,37 @@ def character_detail(char_id):
 
 @app.route('/daily')
 def daily_game():
-    # 1. Get Today's Date in EST
     tz = pytz.timezone('America/New_York')
     today_date = datetime.now(tz).date()
 
-    # 2. Check if the challenge already exists
+    # 1. Check if the challenge already exists
     challenge = DailyChallenge.query.filter_by(date=today_date).first()
 
     if not challenge:
-        # Generate it for the first time today
+        # 2. Convert date to a float between -1 and 1 for Postgres setseed()
+        # We use the integer timestamp and a bit of math to generate a seed
+        seed_value = int(today_date.strftime('%Y%m%d')) / 100000000.0
+        
+        # 3. Set the seed in the current database session
+        db.session.execute(text(f"SELECT setseed({seed_value})"))
+
+        # 4. Use the DB to pick the panel. 
+        # Because the seed is set, func.random() will return the SAME panel for this date.
         daily_panel = Page.query.join(Alias)\
                             .filter(Page.type == 'image', Alias.user_id != None)\
-                            .order_by(func.random())\
+                            .order_by(text("random()"))\
                             .first()
-        daily_panel_id = daily_panel.id
-        challenge = DailyChallenge(date=today_date, page_id=daily_panel_id)
-        db.session.add(challenge)
-        db.session.commit()
+
+        if daily_panel:
+            new_challenge = DailyChallenge(date=today_date, page_id=daily_panel.id)
+            db.session.add(new_challenge)
+            try:
+                db.session.commit()
+                challenge = new_challenge
+            except IntegrityError:
+                # Someone else's request finished a millisecond faster
+                db.session.rollback()
+                challenge = DailyChallenge.query.filter_by(date=today_date).first()
 
     # 3. Use the stored panel
     panel = challenge.panel

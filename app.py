@@ -566,15 +566,22 @@ def add_character():
         if existing_character not in page.characters:
             page.characters.append(existing_character)
     else:
-        image_url = request.form.get('image_url')
-
-        new_character = Character(name=name, image_url=image_url)
+        new_character = Character(name=name, image_url="")
         db.session.add(new_character)
 
         new_character.pages.append(page)
 
     db.session.commit()
     flash("Character added!")
+
+    # Check if request is AJAX
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            "id": new_character.id,
+            "name": new_character.name,
+            "imgSrc": existing_character.image_url if existing_character else None
+        })
+
     return redirect(url_for('panel_detail', page_id=request.form.get('page_id')))
 
 @app.route('/admin/tag-character', methods=['POST'])

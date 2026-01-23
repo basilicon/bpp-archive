@@ -55,6 +55,26 @@
                             border-top-right-radius: 0 !important;
                             border-bottom-right-radius: 0 !important;
                         }
+
+                        #recent-tags-list button {
+                            border-style: dashed;
+                            transition: all 0.2s;
+                        }
+                        #recent-tags-list button:hover {
+                            border-style: solid;
+                            background-color: #e9ecef;
+                        }
+
+                        .text-success {
+                            font-size: 0.75rem;
+                            font-style: italic;
+                            animation: fadeIn 0.5s ease-in;
+                        }
+
+                        @keyframes fadeIn {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
+                        }
                     </style>
 
                     <div class="p-3 border-bottom bg-light">
@@ -66,12 +86,20 @@
                                 <select id="char-search" name="character_id" placeholder="Search..." autocomplete="off">
                                     <option value="">Search characters...</option>
                                     {% for char in all_characters %}
-                                        <option value="{{ char.id }}">{{ char.name }}</option>
+                                        <option value="{{ char.id }}" data-src="{{ char.image_url or url_for('static', filename='default_char.png') }}">
+                                            {{ char.name }}
+                                        </option>
                                     {% endfor %}
                                 </select>
                                 <button type="submit" class="btn btn-success px-3" style="z-index: 5;">Tag</button>
                             </div>
                         </form>
+
+                        <div id="recent-tags-container" class="mb-2 d-none">
+                            <label class="small fw-bold text-muted mb-1">Recently Tagged:</label>
+                            <div id="recent-tags-list" class="d-flex flex-wrap gap-1">
+                                </div>
+                        </div>
 
                         <hr>
 
@@ -84,24 +112,170 @@
                     </div>
 
                     <script>
+                        const maxRecentTags = 5;
+
                         document.addEventListener("DOMContentLoaded", function() {
-                            new TomSelect("#char-search", {
+                            const tomSelect = new TomSelect("#char-search", {
                                 create: false,
-                                sortField: {
-                                    field: "text",
-                                    direction: "asc"
-                                }
+                                sortField: { field: "text", direction: "asc" }
                             });
+
+                            const STORAGE_KEY = 'bpp_recent_characters';
+
+                            function addCharToUI(id, name, imgSrc) {
+                                const noCharsMsg = document.getElementById('no-chars-msg');
+                                if (noCharsMsg) noCharsMsg.remove();
+
+                                if (document.getElementById(`char-tag-${id}`)) return;
+
+                                // Use the passed imgSrc, or a default if null
+                                const finalImg = imgSrc || '/static/default_char.png';
+
+                                const html = `
+                                    <div class="list-group-item d-flex justify-content-between align-items-center" id="char-tag-${id}">
+                                        <div class="d-flex align-items-center text-dark flex-grow-1">
+                                            <img src="${finalImg}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                            <div>
+                                                <div class="fw-bold">${name}</div>
+                                                <small class="text-success">Just added!</small>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                                document.getElementById('character-list-container').insertAdjacentHTML('afterbegin', html);
+                            }
+
+                            async function silentTag(id, name, imgSrc) {
+                                const formData = new FormData();
+                                formData.append('page_id', '{{ panel.id }}');
+                                formData.append('character_id', id);
+
+                                try {
+                                    const response = await fetch("{{ url_for('tag_character') }}", {
+                                        method: "POST",
+                                        body: formData
+                                    });
+
+                                    if (response.ok) {
+                                        addCharToUI(id, name, imgSrc);
+                                        saveToRecent(id, name, imgSrc); // Now saving the image too
+                                        renderRecentTags();
+                                        tomSelect.clear();
+                                    }
+                                } catch (error) {
+                                    console.error("Network error:", error);
+                                }
+                            }
+
+                            function saveToRecent(id, name, imgSrc) {
+                                let recent = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                                recent = recent.filter(item => item.id !== id);
+                                recent.unshift({ id, name, imgSrc }); // Store the image URL
+                                localStorage.setItem(STORAGE_KEY, JSON.stringify(recent.slice(0, maxRecentTags)));
+                            }
+
+                            function renderRecentTags() {
+                                const recent = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                                const recentList = document.getElementById('recent-tags-list');
+                                if (recent.length === 0) return;
+
+                                // 1. Get all valid IDs currently available in the TomSelect dropdown
+                                // This represents the "Source of Truth" from the server
+                                const validIds = Object.keys(tomSelect.options);
+
+                                // 2. Filter the cached list to only include IDs that still exist on the server
+                                const filteredRecent = recent.filter(char => validIds.includes(String(char.id)));
+
+                                // 3. If we removed anything, update localStorage to keep it clean
+                                if (filteredRecent.length !== recent.length) {
+                                    localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredRecent));
+                                }
+
+                                if (filteredRecent.length === 0) {
+                                    document.getElementById('recent-tags-container').classList.add('d-none');
+                                    return;
+                                }
+                                
+                                document.getElementById('recent-tags-container').classList.remove('d-none');
+                                recentList.innerHTML = '';
+
+                                filteredRecent.forEach(char => {
+                                    const btn = document.createElement('button');
+                                    btn.type = 'button';
+                                    btn.className = 'btn btn-sm btn-outline-secondary py-0 px-2 small';
+                                    btn.innerText = `+ ${char.name}`;
+                                    // Pass the stored image URL back into the tag function
+                                    btn.onclick = () => silentTag(char.id, char.name, char.imgSrc);
+                                    recentList.appendChild(btn);
+                                });
+                            }
+
+                            const tagForm = document.querySelector('form[action="{{ url_for("tag_character") }}"]');
+
+                            tagForm.onsubmit = (e) => {
+                                e.preventDefault();
+                                const id = tomSelect.getValue();
+                                
+                                // Check if an ID is actually selected
+                                if (!id) return;
+
+                                // 1. Find the actual <option> element in the original <select>
+                                const originalOption = document.querySelector(`#char-search option[value="${id}"]`);
+                                
+                                // 2. Safely grab the text and data-src
+                                const name = originalOption ? originalOption.text : "Unknown";
+                                const imgSrc = originalOption ? originalOption.dataset.src : '/static/default_char.png';
+                                
+                                silentTag(id, name, imgSrc);
+                            };
+
+                            const createForm = document.querySelector('form[action="{{ url_for("add_character") }}"]');
+
+                            createForm.onsubmit = async (e) => {
+                                e.preventDefault();
+                                
+                                const formData = new FormData(createForm);
+                                const nameInput = createForm.querySelector('input[name="name"]');
+
+                                try {
+                                    const response = await fetch("{{ url_for('add_character') }}", {
+                                        method: "POST",
+                                        body: formData,
+                                        headers: { "X-Requested-With": "XMLHttpRequest" }
+                                    });
+
+                                    if (response.ok) {
+                                        const data = await response.json();
+
+                                        console.log("Character created:", data);
+                                        
+                                        const imgSrc = data.imgSrc || "{{ panel.content_url }}";
+
+                                        // 1. Add to the list on the right
+                                        addCharToUI(data.id, data.name, imgSrc);
+                                        
+                                        // 2. Save to recent tags and re-render them
+                                        saveToRecent(data.id, data.name, imgSrc);
+                                        renderRecentTags();
+                                        
+                                        // 3. Clear the input
+                                        nameInput.value = '';
+                                    }
+                                } catch (error) {
+                                    console.error("Error creating character:", error);
+                                }
+                            };
+
+                            renderRecentTags();
                         });
                     </script>
 
 
                     {% endif %}
 
-                    <div class="list-group list-group-flush overflow-auto" style="max-height: 400px;">
+                    <div id="character-list-container" class="list-group list-group-flush overflow-auto" style="max-height: 400px;">
                         {% if panel.characters %}
                         {% for char in panel.characters %}
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div id="char-tag-{{ char.id }}" class="list-group-item d-flex justify-content-between align-items-center">
                             <a href="{{ url_for('character_detail', char_id=char.id) }}"
                                 class="d-flex align-items-center text-decoration-none text-dark flex-grow-1">
                                 <img src="{{ char.image_url or url_for('static', filename='default_char.png') }}"
@@ -125,7 +299,7 @@
                         </div>
                         {% endfor %}
                         {% else %}
-                        <div class="p-4 text-center text-muted">
+                        <div id="no-chars-msg" class="p-4 text-center text-muted">
                             <p>No characters tagged in this panel yet.</p>
                         </div>
                         {% endif %}

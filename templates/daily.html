@@ -200,14 +200,13 @@
         for (let i = 0; i < 6; i++) {
             if (gameOver && i === guesses && !document.getElementById('status-alert').classList.contains('alert-danger')) {
                 squares += "🟩";
-                break;
             } else if (i < guesses) {
                 squares += "🟥";
             } else {
                 squares += "⬜";
             }
         }
-        const text = `BPP-dle #${challengeId}\n${squares}\n${window.location.href}`;
+        const text = `BPP-dle #${challengeId}\n||${squares}||\n${window.location.href}`;
         navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
     }
 

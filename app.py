@@ -535,20 +535,28 @@ def add_character():
     name = request.form.get('name')
     panel = request.form.get('page_id')
 
+    if not name or not panel:
+        flash("Name and panel are required!")
+        return redirect(request.referrer)
+
     # check if character with same name exists
-    if db.session.query(Character).filter_by(name=name).first():
-        flash("Character with that name already exists!")
-        return redirect(url_for('data_table_detail', table_name='characters'))
+    existing_character = Character.query.filter_by(name=name).first()
+    page = Page.query.get(panel)
 
-    image_url = request.form.get('image_url')
+    if not page:
+        flash("Invalid panel specified!")
+        return redirect(request.referrer)
 
-    new_character = Character(name=name, image_url=image_url)
-    db.session.add(new_character)
+    if existing_character:
+        if existing_character not in page.characters:
+            page.characters.append(existing_character)
+    else:
+        image_url = request.form.get('image_url')
 
-    if panel:
-        page = Page.query.get(panel)
-        if page:
-            new_character.pages.append(page)
+        new_character = Character(name=name, image_url=image_url)
+        db.session.add(new_character)
+
+        new_character.pages.append(page)
 
     db.session.commit()
     flash("Character added!")
@@ -560,6 +568,10 @@ def tag_character():
     page_id = request.form.get('page_id')
     char_id = request.form.get('character_id')
     
+    if not page_id or not char_id:
+        flash("Missing page or character ID!")
+        return redirect(request.referrer)
+
     panel = Page.query.get(page_id)
     character = Character.query.get(char_id)
     

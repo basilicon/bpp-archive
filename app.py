@@ -41,6 +41,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "max_overflow": 0 # don't allow extra connections beyond pool_size
 }
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-for-sessions')
+app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024  # 25 MB upload limit
 db.init_app(app)
 
 @app.route('/')

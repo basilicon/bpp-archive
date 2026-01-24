@@ -12,7 +12,6 @@ import json
 from b2blaze import upload_b64img_to_b2, delete_b2_file
 from dotenv import load_dotenv
 import base64
-from concurrent.futures import ThreadPoolExecutor
 import threading
 import pytz
 import gc
@@ -388,15 +387,9 @@ def import_step2():
                 for b in data['books']:
                     for p in b['pages']:
                         if p['type'] == 'drawing':
-                            image_tasks.append(p)
-
-                def upload_worker(page):
-                    # Injects the B2 URL directly into the page dict
-                    page['b2_url'] = upload_b64img_to_b2(page['content'])
-
-                # Fire off 10 uploads at a time in the background
-                with ThreadPoolExecutor(max_workers=10) as executor:
-                    executor.map(upload_worker, image_tasks)
+                            b64_content = p['content']
+                            b2_url = upload_b64img_to_b2(b64_content, folder='panels')
+                            p['b2_url'] = b2_url
 
                 # B. Database Insertion (Now fast since images are done)
                 new_game = Game(date=datetime.fromisoformat(data['date']).date())

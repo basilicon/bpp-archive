@@ -10,7 +10,7 @@ load_dotenv()  # Load environment variables from .env file
 B2_KEY_ID = os.getenv("B2_KEY_ID", "your_key_id")
 B2_APPLICATION_KEY = os.getenv("B2_APPLICATION_KEY", "your_application_key")
 B2_BUCKET_NAME = os.getenv("B2_BUCKET_NAME", "your_bucket_name")
-IMAGE_SERVER_URL = os.getenv("IMAGE_SERVER_URL", "https://images.freefnafgamesbecauseipiratedthem.com/")
+IMAGE_SERVER_URL = os.getenv("IMAGE_SERVER_URL", "https://images.freefnafgamesbecauseipiratedthem.com")
 
 info = InMemoryAccountInfo()
 b2_api = B2Api(info)

@@ -116,6 +116,7 @@ def api_panel_random():
         "id": panel.id,
         "content_url": panel.content_url,
         "book_id": panel.book_id,
+        "game_id": panel.book.game_id,
         "author": panel.author_alias.name,
         "prompt": panel.book.pages[0].content_text, # The first text page
         "sequence": panel.sequence

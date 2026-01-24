@@ -34,6 +34,7 @@
                 <p class="mb-2">Drawn by: <strong id="panel-author"></strong></p>
                 <div class="d-flex justify-content-center gap-2">
                     <a href="" id="view-book-btn" class="btn btn-sm btn-outline-secondary">View Full Book</a>
+                    <a href="" id="view-game-btn" class="btn btn-sm btn-outline-secondary">View Game</a>
                     <button onclick="copyPanelLink()" class="btn btn-sm btn-outline-info">Share Panel</button>
                 </div>
             </div>
@@ -65,6 +66,7 @@
             document.getElementById('panel-author').innerText = data.author;
             document.getElementById('panel-prompt').innerText = `"${data.prompt}"`;
             document.getElementById('view-book-btn').href = `/book/${data.book_id}`;
+            document.getElementById('view-game-btn').href = `/game/${data.game_id}`;
             
             window.currentPanelId = data.id;
 

@@ -145,6 +145,9 @@
                             }
 
                             async function silentTag(id, name, imgSrc) {
+                                // 1. Update UI immediately (Optimistic)
+                                addCharToUI(id, name, imgSrc);
+                                
                                 const formData = new FormData();
                                 formData.append('page_id', '{{ panel.id }}');
                                 formData.append('character_id', id);
@@ -156,13 +159,31 @@
                                     });
 
                                     if (response.ok) {
-                                        addCharToUI(id, name, imgSrc);
-                                        saveToRecent(id, name, imgSrc); // Now saving the image too
+                                        // 2. Success: Finalize the state
+                                        saveToRecent(id, name, imgSrc);
                                         renderRecentTags();
                                         tomSelect.clear();
+                                    } else {
+                                        // 3. Server error: Remove from UI and alert user
+                                        handleTagError(id, "Server rejected the tag.");
                                     }
                                 } catch (error) {
+                                    // 4. Network error: Remove from UI
+                                    handleTagError(id, "Network error. Tag not saved.");
                                     console.error("Network error:", error);
+                                }
+                            }
+
+                            // Helper to undo the UI change
+                            function handleTagError(id, message) {
+                                const el = document.getElementById(`char-tag-${id}`);
+                                if (el) {
+                                    el.style.transition = "all 0.4s";
+                                    el.style.backgroundColor = "#f8d7da"; // Red flash for error
+                                    setTimeout(() => {
+                                        el.remove();
+                                        alert(message);
+                                    }, 500);
                                 }
                             }
 

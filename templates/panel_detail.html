@@ -155,7 +155,10 @@
                                 try {
                                     const response = await fetch("{{ url_for('tag_character') }}", {
                                         method: "POST",
-                                        body: formData
+                                        body: formData,
+                                        headers: {
+                                            'X-Requested-With': 'XMLHttpRequest'
+                                        }
                                     });
 
                                     if (response.ok) {

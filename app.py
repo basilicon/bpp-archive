@@ -550,21 +550,23 @@ def add_character():
         return redirect(request.referrer)
 
     # check if character with same name exists
-    existing_character = Character.query.filter_by(name=name).first()
+    character = Character.query.filter_by(name=name).first()
     page = Page.query.get(panel)
 
     if not page:
         flash("Invalid panel specified!")
         return redirect(request.referrer)
 
-    if existing_character:
-        if existing_character not in page.characters:
-            page.characters.append(existing_character)
-    else:
-        new_character = Character(name=name, image_url="")
-        db.session.add(new_character)
+    character_exists = character is not None
 
-        new_character.pages.append(page)
+    if character_exists:
+        if character not in page.characters:
+            page.characters.append(character)
+    else:
+        character = Character(name=name, image_url="")
+        db.session.add(character)
+
+        character.pages.append(page)
 
     db.session.commit()
     flash("Character added!")
@@ -572,9 +574,9 @@ def add_character():
     # Check if request is AJAX
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({
-            "id": new_character.id,
-            "name": new_character.name,
-            "imgSrc": existing_character.image_url if existing_character else None
+            "id": character.id,
+            "name": character.name,
+            "imgSrc": character.image_url if character_exists else None
         })
 
     return redirect(url_for('panel_detail', page_id=request.form.get('page_id')))

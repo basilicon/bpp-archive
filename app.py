@@ -599,6 +599,15 @@ def tag_character():
         db.session.commit()
         flash(f"Tagged {character.name}!")
     
+        # Check if request is AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                "status": "success",
+                "id": character.id,
+                "name": character.name,
+                "imgSrc": character.image_url
+            })
+
     return redirect(url_for('panel_detail', page_id=page_id))
 
 @app.route('/admin/untag-character', methods=['POST'])

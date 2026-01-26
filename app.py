@@ -569,7 +569,6 @@ def add_character():
         character.pages.append(page)
 
     db.session.commit()
-    flash("Character added!")
 
     # Check if request is AJAX
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -597,7 +596,6 @@ def tag_character():
     if panel and character and character not in panel.characters:
         panel.characters.append(character)
         db.session.commit()
-        flash(f"Tagged {character.name}!")
     
         # Check if request is AJAX
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

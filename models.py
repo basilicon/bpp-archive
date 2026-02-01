@@ -108,3 +108,7 @@ class DailyChallenge(db.Model):
     
     # Relationship to get the panel easily
     panel = db.relationship('Page', backref='daily_challenges')
+
+class SystemMetadata(db.Model):
+    key = db.Column(db.String(100), primary_key=True)
+    value = db.Column(db.Text, nullable=False)

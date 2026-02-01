@@ -1,20 +1,24 @@
-from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context, jsonify
-from models import db, User, Alias, Game, Book, Page, Character, AdminKey, DailyChallenge
-from sqlalchemy import Engine, or_, Date, event, func, text
-from sqlalchemy.exc import IntegrityError
-from functools import wraps
-import os
-from datetime import datetime, date
-import random
-import uuid
-from import_bpp import process_html_content
-import json
-from b2blaze import upload_b64img_to_b2, delete_b2_file
-from dotenv import load_dotenv
 import base64
-import threading
-import pytz
 import gc
+import hashlib
+import json
+import os
+import threading
+import uuid
+from datetime import datetime
+from functools import wraps
+
+import pytz
+from dotenv import load_dotenv
+from flask import (Flask, copy_current_request_context, flash, jsonify,
+                   redirect, render_template, request, session, url_for)
+from sqlalchemy import Date, event, func, text
+from sqlalchemy.exc import IntegrityError
+
+from b2blaze import delete_b2_file, upload_b64img_to_b2
+from import_bpp import process_html_content
+from models import (AdminKey, Alias, Book, Character, DailyChallenge, Game,
+                    Page, SystemMetadata, User, db)
 
 load_dotenv()
 
@@ -43,6 +47,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-for-sess
 app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024  # 25 MB upload limit
 db.init_app(app)
 
+# --- ROUTES ---
 @app.route('/')
 def index():
     # Show the 3 most recent games at the top
@@ -85,11 +90,11 @@ def search():
 def panel_detail(page_id):
     panel = Page.query.get_or_404(page_id)
 
-    all_characters = []
-    # Don't load all characters unless admin, save bandwidth
+    # Don't load manifest unless admin, save bandwidth
     if session.get('is_admin'):
-        all_characters = Character.query.order_by(Character.name).all()
-    return render_template('panel_detail.html', panel=panel, all_characters=all_characters)
+        manifest = character_manifest()
+    
+    return render_template('panel_detail.html', panel=panel, manifest=manifest)
 
 @app.route('/panel/random')
 def panel_random():
@@ -183,6 +188,44 @@ def user_detail(user_id):
     return render_template('user_detail.html', 
                            user=user, 
                            drawings=drawings_pagination)
+
+@app.route('/api/characters/manifest')
+def character_manifest():
+    current_char_hash = get_metadata('character_manifest_hash')
+
+    if current_char_hash == None:
+        current_char_hash = update_manifest_cache()
+    
+    return jsonify({
+        "hash": current_char_hash
+    })
+
+def update_manifest_cache():
+    chars = Character.query.with_entities(Character.id, Character.name).all()
+    char_string = ",".join([f"{c.id}:{c.name}" for c in chars])
+
+    hash = hashlib.md5(char_string.encode()).hexdigest()
+
+    # Store the hash in the SystemMetadata table
+    meta = SystemMetadata.query.filter_by(key='character_manifest_hash').first()
+    if not meta:
+        meta = SystemMetadata(key='character_manifest_hash', value=hash)
+        db.session.add(meta)
+    else:
+        meta.value = hash
+
+    db.session.commit()
+    return hash
+
+event.listen(Character, 'after_insert', update_manifest_cache)
+event.listen(Character, 'after_update', update_manifest_cache)
+event.listen(Character, 'after_delete', update_manifest_cache)
+
+def get_metadata(key):
+    meta = SystemMetadata.query.filter_by(key=key).first()
+    if not meta:
+        return None
+    return meta.value
 
 @app.route('/characters')
 def character_list():

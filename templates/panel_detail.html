@@ -114,6 +114,10 @@
                     <script>
                         const maxRecentTags = 5;
 
+                        const CHAR_CACHE_KEY = 'bpp_all_characters';
+                        const CHAR_HASH_KEY = 'bpp_character_manifest_hash';
+
+
                         document.addEventListener("DOMContentLoaded", function() {
                             const tomSelect = new TomSelect("#char-search", {
                                 create: false,

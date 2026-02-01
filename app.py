@@ -670,6 +670,18 @@ def edit_game_name(game_id):
     
     return redirect(url_for('game_detail', game_id=game.id))
 
+@app.route('/admin/edit-game-video/<int:game_id>', methods=['POST'])
+@admin_required
+def edit_game_video(game_id):
+    game = Game.query.get_or_404(game_id)
+    new_video_link = request.form.get('video_link')
+    
+    game.video_link = new_video_link.strip() if new_video_link else None
+    db.session.commit()
+    flash("Game video link updated!")
+    
+    return redirect(url_for('game_detail', game_id=game.id))
+
 @app.route('/logout', methods=['POST'])
 def logout():
     session.clear()

@@ -16,6 +16,26 @@
         <h1 class="display-5 fw-bold">{{ game.display_title }}</h1>
         {% endif %}
 
+        {% if session.get('is_admin') %}
+        <div class="mt-2">
+            <form action="{{ url_for('edit_game_video', game_id=game.id) }}" method="POST" class="mb-2">
+                <div class="input-group">
+                    <input type="url" name="video_link" class="form-control"
+                        value="{{ game.video_link or '' }}" placeholder="Video Link (YouTube, Vimeo, etc.)">
+                    <button class="btn btn-outline-success" type="submit">Save Video Link</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if game.video_link %}
+        <div class="mb-3">
+            <a href="{{ game.video_link }}" target="_blank" class="btn btn-primary">
+                <i class="bi bi-play-circle"></i> Watch Game Video
+            </a>
+        </div>
+        {% endif %}
+
         <p class="text-muted">Played on {{ game.date.strftime('%B %d, %Y') }}</p>
     </div>
 

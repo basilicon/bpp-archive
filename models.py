@@ -28,6 +28,7 @@ class Game(db.Model):
     title = db.Column(db.String(200)) # Optional title
     books = db.relationship('Book', backref='game', lazy=True, cascade="all, delete-orphan")
     override_image_url = db.Column(db.String(200), nullable=True) # Optional custom preview image
+    video_link = db.Column(db.String(200), nullable=True) # Optional video link
 
     @property
     def display_title(self):

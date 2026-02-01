@@ -15,9 +15,16 @@
         {% if page.characters %}
         <div class="panel-chars">
             <small>Featuring:
+                {% if page.characters|length < 5 %}
                 {% for char in page.characters %}
-                <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
+                    <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
                 {% endfor %}
+                {% else %}
+                {% for char in page.characters[:4] %}
+                    <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
+                {% endfor %}
+                and {{ page.characters|length - 4 }} other{% if page.characters|length - 4 > 1 %}s{% endif %}
+                {% endif %}
             </small>
         </div>
         {% endif %}

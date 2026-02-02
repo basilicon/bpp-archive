@@ -241,13 +241,12 @@ def daily_game():
             from page p
             join alias a on a.id = p.alias_id
             where p.type = 'image'
-            and a.user_id is not null         
+            and a.user_id is not null
             and not exists (
-            select 1
-            from page_characters pc
-            join character c on c.id = pc.character_id
-            where pc.page_id = p.id
-            and c.name <> 'nsfw'
+                select 1
+                from page_characters pc
+                where pc.page_id = p.id
+                and (pc.character_id = 164 or pc.character_id = 169)
             )
             order by random()
             limit 1;

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context, jsonify
-from models import db, User, Alias, Game, Book, Page, Character, AdminKey, DailyChallenge
+from models import db, User, Alias, Game, Book, Page, Character, AdminKey, DailyChallenge, page_characters
 from sqlalchemy import Engine, or_, Date, event, func, text
 from sqlalchemy.exc import IntegrityError
 from functools import wraps
@@ -236,10 +236,24 @@ def daily_game():
 
         # 4. Use the DB to pick the panel. 
         # Because the seed is set, func.random() will return the SAME panel for this date.
-        daily_panel = Page.query.join(Alias)\
-                            .filter(Page.type == 'image', Alias.user_id != None)\
-                            .order_by(text("random()"))\
-                            .first()
+        sql_query = text("""
+            select p.*
+            from page p
+            join alias a on a.id = p.alias_id
+            where p.type = 'image'
+            and a.user_id is not null         
+            and not exists (
+            select 1
+            from page_characters pc
+            join character c on c.id = pc.character_id
+            where pc.page_id = p.id
+            and c.name <> 'nsfw'
+            )
+            order by random()
+            limit 1;
+        """)
+
+        daily_panel = db.session.execute(sql_query).fetchone()
 
         if daily_panel:
             new_challenge = DailyChallenge(date=today_date, page_id=daily_panel.id)

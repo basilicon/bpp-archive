@@ -36,8 +36,8 @@ def process_html_content(content):
         game_title = h2.text.strip()
 
         # --- Process each panel (section) ---
-        for seq, section in enumerate(article.find_all("section"), start=1):
-            h3 = section.find("h3")
+        for seq, section in enumerate(article.find_all("section", recursive=False), start=1):
+            h3 = section.find("h3", recursive=False)
             if not h3:
                 continue
             # Extract author

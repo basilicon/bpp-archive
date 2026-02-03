@@ -63,7 +63,7 @@
             const data = await response.json();
 
             document.getElementById('panel-img').src = data.content_url;
-            document.getElementById('panel-author').innerText = data.author;
+            document.getElementById('panel-author').innerHTML = `<a href="/user/${data.author_id}">${data.author}</a>`;
             document.getElementById('panel-prompt').innerText = `"${data.prompt}"`;
             document.getElementById('view-book-btn').href = `/book/${data.book_id}`;
             document.getElementById('view-game-btn').href = `/game/${data.game_id}`;

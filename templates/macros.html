@@ -3,7 +3,9 @@
     <div class="panel-content">
         {% if page.type == 'text' %}
         <blockquote class="text-panel">
-            "{{ page.content_text }}"
+            {% for line in page.content_text.splitlines() %}
+            <p class="mb-1">{{ line }}</p>
+            {% endfor %}
         </blockquote>
         {% else %}
 

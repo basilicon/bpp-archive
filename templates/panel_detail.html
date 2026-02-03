@@ -22,7 +22,9 @@
                 <img src="{{ panel.content_url }}" class="img-fluid rounded-start" alt="BPP Drawing">
                 {% else %}
                 <div class="card-body py-5 text-center">
-                    <h2 class="fst-italic">"{{ panel.content_text }}"</h2>
+                    {% for line in panel.content_text.splitlines() %}
+                    <h2 class="fst-italic">"{{ line }}"</h2>
+                    {% endfor %}
                 </div>
                 {% endif %}
                 <div class="card-footer text-muted">

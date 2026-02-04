@@ -247,7 +247,7 @@ def daily_game():
                 select 1
                 from page_characters pc
                 where pc.page_id = p.id
-                and (pc.character_id = 164 or pc.character_id = 169)
+                and (pc.character_id = 164 or pc.character_id = 169 or pc.character_id = 253)
             )
             order by random()
             limit 1;

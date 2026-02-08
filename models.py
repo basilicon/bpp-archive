@@ -24,7 +24,7 @@ class Alias(db.Model):
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    date = db.Column(db.Date, nullable=False, index=True, default=datetime.utcnow)
     title = db.Column(db.String(200)) # Optional title
     books = db.relationship('Book', backref='game', lazy=True, cascade="all, delete-orphan")
     override_image_url = db.Column(db.String(200), nullable=True) # Optional custom preview image

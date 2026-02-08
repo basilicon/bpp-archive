@@ -176,10 +176,15 @@ def user_detail(user_id):
     
     # 4. Change .all() to .paginate()
     # This returns a Pagination object instead of a list
-    drawings_pagination = Page.query.filter(
-        Page.alias_id.in_(aliases_ids), 
-        Page.type == 'image'
-    ).order_by(Page.id.desc()).paginate(page=page_num, per_page=per_page, error_out=False)
+    drawings_pagination = Page.query\
+        .join(Book, Page.book_id == Book.id)\
+        .join(Game, Book.game_id == Game.id)\
+        .filter(
+            Page.alias_id.in_(aliases_ids), 
+            Page.type == 'image'
+        )\
+        .order_by(Game.date.desc(), Page.id.desc())\
+        .paginate(page=page_num, per_page=per_page, error_out=False)
     
     return render_template('user_detail.html', 
                            user=user, 

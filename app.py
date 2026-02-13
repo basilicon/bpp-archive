@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context, jsonify
 from models import db, User, Alias, Game, Book, Page, Character, AdminKey, DailyChallenge, page_characters
-from sqlalchemy import Engine, or_, Date, event, func, text
+from sqlalchemy import Engine, or_, Date, event, func, text, select
 from sqlalchemy.exc import IntegrityError
 from functools import wraps
 import os
@@ -161,6 +161,41 @@ def book_detail(book_id):
     book = Book.query.get_or_404(book_id)
     return render_template('book_detail.html', book=book)
 
+@app.route('/users')
+def user_list():
+    page = request.args.get('page', 1, type=int)
+
+    random_page = (
+        select(Page.content_url.label("page_image_url"), Alias.user_id)
+        .select_from(Alias)
+        .join(Page, Page.alias_id == Alias.id)
+        .where(
+            Alias.user_id == User.id,
+            Page.type == "image"
+        )
+        .order_by(func.random())
+        .limit(1)
+        .lateral()
+    )
+
+    pagination = (
+        db.session.query(
+            User,
+            func.count(Page.id).label('page_count'),
+            random_page.c.page_image_url
+        )
+        .join(Alias, User.id == Alias.user_id)
+        .join(Page, Alias.id == Page.alias_id)
+        .join(random_page, random_page.c.user_id == Alias.user_id)
+        .filter(Page.type == "image")
+        .group_by(User.id, random_page.c.page_image_url)
+        .order_by(func.count(Page.id).desc())
+        .paginate(page=page, per_page=18, error_out=False)
+    )
+
+    users = pagination.items
+    return render_template('user_list.html', users=users, pagination=pagination)
+
 @app.route('/user/<int:user_id>')
 def user_detail(user_id):
     user = User.query.get_or_404(user_id)
@@ -193,8 +228,8 @@ def user_detail(user_id):
 @app.route('/characters')
 def character_list():
     page = request.args.get('page', 1, type=int)
-    # Sort by name alphabetically
-    pagination = characters_with_counts = db.session.query(
+    # Sort by count
+    pagination = db.session.query(
         Character, 
         func.count(Page.id).label('appearance_count')
     ).outerjoin(Character.pages) \

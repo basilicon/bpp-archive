@@ -249,10 +249,14 @@ def character_detail(char_id):
     page_num = request.args.get('page', 1, type=int)
     per_page = 15  # 5 columns x 3 rows looks great on a grid
     
-    # Query Pages that are associated with this character
-    # We use .any(id=char_id) for many-to-many relationships
-    pagination = Page.query.filter(Page.characters.any(id=char_id)) \
-        .order_by(Page.id.desc()) \
+    pagination = Page.query\
+        .join(Book, Page.book_id == Book.id)\
+        .join(Game, Book.game_id == Game.id)\
+        .filter(
+            Page.characters.any(id=char_id), 
+            Page.type == 'image'
+        )\
+        .order_by(Game.date.desc(), Page.sequence.desc(), Page.id.desc())\
         .paginate(page=page_num, per_page=per_page, error_out=False)
         
     return render_template('character_detail.html', 

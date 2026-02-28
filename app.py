@@ -218,7 +218,7 @@ def user_detail(user_id):
             Page.alias_id.in_(aliases_ids), 
             Page.type == 'image'
         )\
-        .order_by(Game.date.desc(), Page.sequence.desc(), Page.id.desc())\
+        .order_by(Game.date.desc(), Page.book_id.desc(), Page.sequence.desc())\
         .paginate(page=page_num, per_page=per_page, error_out=False)
     
     return render_template('user_detail.html', 
@@ -256,7 +256,7 @@ def character_detail(char_id):
             Page.characters.any(id=char_id), 
             Page.type == 'image'
         )\
-        .order_by(Game.date.desc(), Page.sequence.desc(), Page.id.desc())\
+        .order_by(Game.date.desc(), Page.book_id.desc(), Page.sequence.desc())\
         .paginate(page=page_num, per_page=per_page, error_out=False)
         
     return render_template('character_detail.html', 

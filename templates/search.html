@@ -1,19 +1,41 @@
 {% extends 'base.html' %}
-{% from 'macros.html' import book_preview %}
+{% from 'macros.html' import book_preview, panel_component %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <h1 class="mb-4">Search Archive</h1>
         
-        <form action="{{ url_for('search') }}" method="get" class="d-flex gap-2 mb-5">
-            <input type="text" name="q" class="form-control form-control-lg" placeholder="Search for books, characters, or users..." value="{{ query }}">
-            <button type="submit" class="btn btn-primary btn-lg">Search</button>
+        <form action="{{ url_for('search') }}" method="get" class="mb-5">
+            <div class="d-flex gap-2 mb-2">
+                <input type="text" name="q" class="form-control form-control-lg" placeholder="Search for books, characters, or users..." value="{{ query }}">
+                <button type="submit" class="btn btn-primary btn-lg">Search</button>
+            </div>
+            <div class="form-text text-muted">
+                <i class="bi bi-info-circle"></i> Tip: Search for multiple characters by separating their names with commas (e.g., "Alice, Bob").
+            </div>
         </form>
 
         {% if query %}
             <h3>Results for "{{ query }}"</h3>
             <hr>
+
+            {% if advanced_pages is not none %}
+            <h5 class="mt-4 text-primary"><i class="bi bi-stars"></i> Advanced Character Matches</h5>
+            {% if advanced_pages %}
+                <!-- Added a container to match character_detail.html styling -->
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+                    {% for panel in advanced_pages %}
+                    <div class="col">
+                        {{ panel_component(panel) }}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No single panel found featuring all of these characters together.</p>
+            {% endif %}
+            <hr class="mt-5">
+            {% endif %}
 
             {% if users %}
             <h5 class="mt-4 text-muted">Users</h5>

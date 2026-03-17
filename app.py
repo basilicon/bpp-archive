@@ -62,24 +62,71 @@ def search():
     if not query:
         return render_template('search.html')
 
-    # Search Logic
-    # 1. Books by first text page
+    books = []
+    characters = []
+    users = []
+    games = []
+    advanced_pages = None
+    
+    # 1. Advanced Character Search (Comma-separated)
+    if ',' in query:
+        parts = [p.strip() for p in query.split(',') if p.strip()]
+        if len(parts) > 1:
+            # For each part, find characters that match
+            matching_pages_sets = []
+            for part in parts:
+                # Find characters matching this part
+                chars_for_part = Character.query.filter(Character.name.ilike(f'%{part}%')).all()
+                
+                if not chars_for_part:
+                    # If any part finds no characters, no pages can match all parts
+                    matching_pages_sets.append(set())
+                    break
+                
+                # Find pages that contain at least one of these matching characters
+                char_ids = [c.id for c in chars_for_part]
+                pages_for_part = Page.query.filter(
+                    Page.type == 'image',
+                    Page.characters.any(Character.id.in_(char_ids))
+                ).all()
+                
+                matching_pages_sets.append(set(p.id for p in pages_for_part))
+            
+            # Find the intersection of all page sets
+            if matching_pages_sets:
+                intersected_page_ids = set.intersection(*matching_pages_sets)
+                if intersected_page_ids:
+                    # Fetch the actual Page objects for the intersection
+                    advanced_pages = Page.query.filter(Page.id.in_(intersected_page_ids)).all()
+                else:
+                    advanced_pages = [] # Empty list to indicate we tried but found nothing
+
+    # If it wasn't an advanced search, or we want to show standard results as well:
+    # We still show standard results for the FULL query string, just in case
+    
+    # 2. Books by first text page
     books = Book.query.join(Page).filter(
         Page.type == 'text',
         Page.sequence == 1,
         Page.content_text.ilike(f'%{query}%')
     ).all()
     
-    # 2. Characters by name
+    # 3. Characters by name
     characters = Character.query.filter(Character.name.ilike(f'%{query}%')).all()
     
-    # 3. Users by True Name
+    # 4. Users by True Name
     users = User.query.filter(User.true_name.ilike(f'%{query}%')).all()
 
-    # 4. Games by Title
+    # 5. Games by Title
     games = Game.query.filter(Game.title.ilike(f'%{query}%')).all()
 
-    return render_template('search.html', query=query, books=books, characters=characters, users=users, games=games)
+    return render_template('search.html', 
+                            query=query, 
+                            books=books, 
+                            characters=characters, 
+                            users=users, 
+                            games=games,
+                            advanced_pages=advanced_pages)
 
 @app.route('/panel/<int:page_id>')
 def panel_detail(page_id):

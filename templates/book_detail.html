@@ -7,7 +7,7 @@
 
 {% block content %}
     <div class="container">
-        <h2>Book #{{ book.id }}</h2>
+        <h2>Book: "{{ book.get_preview_text() }}"</h2>
         <a href="{{ url_for('game_detail', game_id=book.game.id) }}" class="btn btn-sm btn-outline-secondary mb-3">
             &larr; From Game: {{ book.game.title if book.game.title else ("Game Night " + book.game.date.strftime('%m-%d-%Y')) }}
         </a>

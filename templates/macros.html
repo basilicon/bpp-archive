@@ -9,22 +9,25 @@
         </blockquote>
         {% else %}
         <a href="{{ url_for('panel_detail', page_id=page.id) }}" class="d-block mb-2">
-            <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}" class="img-fluid rounded shadow-sm">
+            <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}"
+                class="img-fluid rounded shadow-sm">
         </a>
 
         {% if page.characters %}
         <div class="panel-chars">
             <small class="text-muted"><i class="bi bi-people-fill text-primary"></i> Featuring:
-                {% if page.characters|length < 5 %}
-                {% for char in page.characters %}
-                    <a href="{{ url_for('character_detail', char_id=char.id) }}" class="badge bg-light border text-dark text-decoration-none my-1">{{ char.name }}</a>
-                {% endfor %}
-                {% else %}
-                {% for char in page.characters[:4] %}
-                    <a href="{{ url_for('character_detail', char_id=char.id) }}" class="badge bg-light border text-dark text-decoration-none my-1">{{ char.name }}</a>
-                {% endfor %}
-                <span class="badge bg-secondary">and {{ page.characters|length - 4 }} other{% if page.characters|length - 4 > 1 %}s{% endif %}</span>
-                {% endif %}
+                {% if page.characters|length < 5 %} {% for char in page.characters %} <a
+                    href="{{ url_for('character_detail', char_id=char.id) }}"
+                    class="badge bg-light border text-dark text-decoration-none my-1">{{ char.name }}</a>
+                    {% endfor %}
+                    {% else %}
+                    {% for char in page.characters[:4] %}
+                    <a href="{{ url_for('character_detail', char_id=char.id) }}"
+                        class="badge bg-light border text-dark text-decoration-none my-1">{{ char.name }}</a>
+                    {% endfor %}
+                    <span class="badge bg-secondary">and {{ page.characters|length - 4 }} other{% if
+                        page.characters|length - 4 > 1 %}s{% endif %}</span>
+                    {% endif %}
             </small>
         </div>
         {% endif %}
@@ -33,7 +36,9 @@
         {% if show_book %}
         <div class="panel-book mt-2">
             <small>
-                <a href="{{ url_for('book_detail', book_id=page.book.id) }}" class="text-decoration-none text-secondary"><i class="bi bi-book"></i> View Full Book #{{page.book.id}}</a>
+                <a href="{{ url_for('book_detail', book_id=page.book.id) }}"
+                    class="text-decoration-none text-secondary"><i class="bi bi-book"></i> View Full Book: "{{
+                    page.book.get_preview_text() }}"</a>
             </small>
         </div>
         {% endif %}
@@ -42,11 +47,13 @@
         <small class="text-muted">
             By
             {% if page.author_alias.user %}
-            <a href="{{ url_for('user_detail', user_id=page.author_alias.user.id) }}" class="text-dark fw-bold text-decoration-none">
+            <a href="{{ url_for('user_detail', user_id=page.author_alias.user.id) }}"
+                class="text-dark fw-bold text-decoration-none">
                 {{ page.author_alias.name }}
             </a>
             {% else %}
-            <span class="text-dark fw-bold">{{ page.author_alias.name }}</span> <span class="text-muted small">(Unlinked)</span>
+            <span class="text-dark fw-bold">{{ page.author_alias.name }}</span> <span
+                class="text-muted small">(Unlinked)</span>
             {% endif %}
         </small>
     </div>
@@ -64,8 +71,10 @@
             {% if first_image %}
             <img src="{{ first_image.content_url }}" alt="Book Preview" class="w-100 h-100 object-fit-cover">
             {% else %}
-            <div class="bg-light text-muted d-flex align-items-center justify-content-center h-100" style="min-height: 200px;">
-                <span class="fw-bold tracking-wide text-secondary px-3 py-2 border border-secondary rounded">NO PREVIEW</span>
+            <div class="bg-light text-muted d-flex align-items-center justify-content-center h-100"
+                style="min-height: 200px;">
+                <span class="fw-bold tracking-wide text-secondary px-3 py-2 border border-secondary rounded">NO
+                    PREVIEW</span>
             </div>
             {% endif %}
         </div>
@@ -76,11 +85,13 @@
     {% if first_author %}
     <div class="preview-footer px-3 py-2 bg-light border-top text-muted small">
         {% if first_author.user %}
-        <i class="bi bi-person"></i> Started by <a href="{{ url_for('user_detail', user_id=first_author.user.id) }}" class="text-decoration-none fw-bold text-dark">
+        <i class="bi bi-person"></i> Started by <a href="{{ url_for('user_detail', user_id=first_author.user.id) }}"
+            class="text-decoration-none fw-bold text-dark">
             {{ first_author.name }}
         </a>
         {% else %}
-        <i class="bi bi-person"></i> Started by <span class="fw-bold text-dark">{{ first_author.name }}</span> <span class="text-muted">(Unlinked)</span>
+        <i class="bi bi-person"></i> Started by <span class="fw-bold text-dark">{{ first_author.name }}</span> <span
+            class="text-muted">(Unlinked)</span>
         {% endif %}
     </div>
     {% endif %}
@@ -94,14 +105,18 @@
             <div class="position-relative">
                 {% set game_preview_img = game.get_preview_image() %}
                 {% if game_preview_img %}
-                <img src="{{ game_preview_img }}" class="card-img-top object-fit-cover" alt="Game Preview" style="height: 200px;">
+                <img src="{{ game_preview_img }}" class="card-img-top object-fit-cover" alt="Game Preview"
+                    style="height: 200px;">
                 {% else %}
-                <div class="bg-light text-muted d-flex align-items-center justify-content-center card-img-top" style="height: 200px;">
-                    <span class="fw-bold tracking-wide text-secondary px-3 py-2 border border-secondary rounded">NO PREVIEW</span>
+                <div class="bg-light text-muted d-flex align-items-center justify-content-center card-img-top"
+                    style="height: 200px;">
+                    <span class="fw-bold tracking-wide text-secondary px-3 py-2 border border-secondary rounded">NO
+                        PREVIEW</span>
                 </div>
                 {% endif %}
                 <div class="position-absolute top-0 end-0 m-2">
-                    <span class="badge bg-dark bg-opacity-75"><i class="bi bi-calendar-event"></i> {{ game.date.strftime('%m/%d/%Y') }}</span>
+                    <span class="badge bg-dark bg-opacity-75"><i class="bi bi-calendar-event"></i> {{
+                        game.date.strftime('%m/%d/%Y') }}</span>
                 </div>
             </div>
             <div class="card-body">

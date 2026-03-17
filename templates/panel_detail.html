@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block og_title %}Panel #{{ panel.sequence }} from Book #{{ panel.book.id }}{% endblock %}
+{% block og_title %}Panel #{{ panel.sequence }} from Book: "{{ panel.book.get_preview_text() }}"{% endblock %}
 {% block og_desc %}Created by {{ panel.author_alias.name }}{% endblock %}
 {% block og_image %}{{ panel.content_url }}{% endblock %}
 
@@ -9,7 +9,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url_for('game_detail', game_id=panel.book.game_id) }}">Game</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('book_detail', book_id=panel.book.id) }}">Owning Book</a>
+            <li class="breadcrumb-item"><a href="{{ url_for('book_detail', book_id=panel.book.id) }}">Book: "{{ panel.book.get_preview_text() }}"</a>
             </li>
             <li class="breadcrumb-item active">Panel #{{ panel.sequence }}</li>
         </ol>

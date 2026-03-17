@@ -195,7 +195,7 @@ def game_list():
     else:
         query = query.order_by(Game.date.desc())
         
-    pagination = query.paginate(page=page, per_page=10, error_out=False)
+    pagination = query.paginate(page=page, per_page=12, error_out=False)
     games = pagination.items
     
     return render_template('game_list.html', 

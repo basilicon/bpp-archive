@@ -6,14 +6,19 @@
 
 {% block content %}
 <div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('game_detail', game_id=panel.book.game_id) }}">Game</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('book_detail', book_id=panel.book.id) }}">Book: "{{ panel.book.get_preview_text() }}"</a>
-            </li>
-            <li class="breadcrumb-item active">Panel #{{ panel.sequence }}</li>
-        </ol>
-    </nav>
+    <div class="mb-4 text-start">
+        <h5 class="text-muted fw-bold mb-1">
+            <a href="{{ url_for('game_detail', game_id=panel.book.game_id) }}" class="text-decoration-none text-secondary">
+                <i class="bi bi-controller"></i> {{ panel.book.game.display_title }}
+            </a>
+        </h5>
+        <h4 class="fw-bold mb-1">
+            <a href="{{ url_for('book_detail', book_id=panel.book.id) }}" class="text-decoration-none text-dark">
+                <i class="bi bi-book"></i> Book: "{{ panel.book.get_preview_text() | truncate(100, True, '...') }}"
+            </a>
+        </h4>
+        <h3 class="fw-bold text-primary mb-0">Panel #{{ panel.sequence }}</h3>
+    </div>
 
     <div class="row">
         <div class="col-md-8">
@@ -48,7 +53,8 @@
                         /* Ensure TomSelect takes up the remaining space but leaves room for the button */
                         .input-group .ts-wrapper {
                             flex: 1 1 auto;
-                            width: 1% !important; /* Forces the flexbox to calculate width correctly */
+                            width: 1% !important;
+                            /* Forces the flexbox to calculate width correctly */
                             min-width: 0;
                         }
 
@@ -62,6 +68,7 @@
                             border-style: dashed;
                             transition: all 0.2s;
                         }
+
                         #recent-tags-list button:hover {
                             border-style: solid;
                             background-color: #e9ecef;
@@ -74,8 +81,13 @@
                         }
 
                         @keyframes fadeIn {
-                            from { opacity: 0; }
-                            to { opacity: 1; }
+                            from {
+                                opacity: 0;
+                            }
+
+                            to {
+                                opacity: 1;
+                            }
                         }
                     </style>
 
@@ -83,14 +95,15 @@
                         <label class="small fw-bold text-muted mb-1">Tag Existing:</label>
                         <form action="{{ url_for('tag_character') }}" method="POST" class="mb-3">
                             <input type="hidden" name="page_id" value="{{ panel.id }}">
-                            
+
                             <div class="input-group input-group-sm">
                                 <select id="char-search" name="character_id" placeholder="Search..." autocomplete="off">
                                     <option value="">Search characters...</option>
                                     {% for char in all_characters %}
-                                        <option value="{{ char.id }}" data-src="{{ char.image_url or url_for('static', filename='default_char.png') }}">
-                                            {{ char.name }}
-                                        </option>
+                                    <option value="{{ char.id }}"
+                                        data-src="{{ char.image_url or url_for('static', filename='default_char.png') }}">
+                                        {{ char.name }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                                 <button type="submit" class="btn btn-success px-3" style="z-index: 5;">Tag</button>
@@ -100,7 +113,7 @@
                         <div id="recent-tags-container" class="mb-2 d-none">
                             <label class="small fw-bold text-muted mb-1">Recently Tagged:</label>
                             <div id="recent-tags-list" class="d-flex flex-wrap gap-1">
-                                </div>
+                            </div>
                         </div>
 
                         <hr>
@@ -108,7 +121,8 @@
                         <label class="small fw-bold text-muted mb-1">Create New:</label>
                         <form action="{{ url_for('add_character') }}" method="POST" class="d-flex gap-2">
                             <input type="hidden" name="page_id" value="{{ panel.id }}">
-                            <input type="text" name="name" class="form-control form-control-sm" placeholder="Character Name" required>
+                            <input type="text" name="name" class="form-control form-control-sm"
+                                placeholder="Character Name" required>
                             <button type="submit" class="btn btn-sm btn-primary">Create</button>
                         </form>
                     </div>
@@ -116,7 +130,7 @@
                     <script>
                         const maxRecentTags = 5;
 
-                        document.addEventListener("DOMContentLoaded", function() {
+                        document.addEventListener("DOMContentLoaded", function () {
                             const tomSelect = new TomSelect("#char-search", {
                                 create: false,
                                 sortField: { field: "text", direction: "asc" }
@@ -149,7 +163,7 @@
                             async function silentTag(id, name, imgSrc) {
                                 // 1. Update UI immediately (Optimistic)
                                 addCharToUI(id, name, imgSrc);
-                                
+
                                 const formData = new FormData();
                                 formData.append('page_id', '{{ panel.id }}');
                                 formData.append('character_id', id);
@@ -220,7 +234,7 @@
                                     document.getElementById('recent-tags-container').classList.add('d-none');
                                     return;
                                 }
-                                
+
                                 document.getElementById('recent-tags-container').classList.remove('d-none');
                                 recentList.innerHTML = '';
 
@@ -240,17 +254,17 @@
                             tagForm.onsubmit = (e) => {
                                 e.preventDefault();
                                 const id = tomSelect.getValue();
-                                
+
                                 // Check if an ID is actually selected
                                 if (!id) return;
 
                                 // 1. Find the actual <option> element in the original <select>
                                 const originalOption = document.querySelector(`#char-search option[value="${id}"]`);
-                                
+
                                 // 2. Safely grab the text and data-src
                                 const name = originalOption ? originalOption.text : "Unknown";
                                 const imgSrc = originalOption ? originalOption.dataset.src : '/static/default_char.png';
-                                
+
                                 silentTag(id, name, imgSrc);
                             };
 
@@ -258,7 +272,7 @@
 
                             createForm.onsubmit = async (e) => {
                                 e.preventDefault();
-                                
+
                                 const formData = new FormData(createForm);
                                 const nameInput = createForm.querySelector('input[name="name"]');
 
@@ -273,16 +287,16 @@
                                         const data = await response.json();
 
                                         console.log("Character created:", data);
-                                        
+
                                         const imgSrc = data.imgSrc || "{{ panel.content_url }}";
 
                                         // 1. Add to the list on the right
                                         addCharToUI(data.id, data.name, imgSrc);
-                                        
+
                                         // 2. Save to recent tags and re-render them
                                         saveToRecent(data.id, data.name, imgSrc);
                                         renderRecentTags();
-                                        
+
                                         // 3. Clear the input
                                         nameInput.value = '';
                                     }
@@ -298,10 +312,12 @@
 
                     {% endif %}
 
-                    <div id="character-list-container" class="list-group list-group-flush overflow-auto" style="max-height: 400px;">
+                    <div id="character-list-container" class="list-group list-group-flush overflow-auto"
+                        style="max-height: 400px;">
                         {% if panel.characters %}
                         {% for char in panel.characters %}
-                        <div id="char-tag-{{ char.id }}" class="list-group-item d-flex justify-content-between align-items-center">
+                        <div id="char-tag-{{ char.id }}"
+                            class="list-group-item d-flex justify-content-between align-items-center">
                             <a href="{{ url_for('character_detail', char_id=char.id) }}"
                                 class="d-flex align-items-center text-decoration-none text-dark flex-grow-1">
                                 <img src="{{ char.image_url or url_for('static', filename='default_char.png') }}"

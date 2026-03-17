@@ -79,7 +79,7 @@
             {% endif %}
         </div>
         <div class="preview-caption p-3">
-            <h5 class="mb-1 text-truncate">{{ first_text.content_text if first_text else "Untitled Book" }}</h5>
+            <h5 class="mb-1" title="{{ book.get_preview_text() }}">{{ book.get_preview_text() | truncate(50, True, '...') }}</h5>
         </div>
     </a>
     {% if first_author %}

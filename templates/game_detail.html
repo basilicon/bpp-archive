@@ -41,8 +41,15 @@
 
     <div class="col-md-4 text-center">
         <div class="d-flex flex-column align-items-center">
-            <img src="{{ game.get_preview_image() }}" class="img-fluid rounded shadow-sm mb-2"
+            {% set game_preview_img = game.get_preview_image() %}
+            {% if game_preview_img %}
+            <img src="{{ game_preview_img }}" class="img-fluid rounded shadow-sm mb-2"
                 style="height: 150px; width: 250px; object-fit: cover;">
+            {% else %}
+            <div class="bg-light text-muted d-flex align-items-center justify-content-center rounded shadow-sm mb-2" style="height: 150px; width: 250px;">
+                <span class="fw-bold tracking-wide text-secondary px-3 py-2 border border-secondary rounded">NO PREVIEW</span>
+            </div>
+            {% endif %}
 
             {% if session.get('is_admin') %}
             <div style="width: 250px;">

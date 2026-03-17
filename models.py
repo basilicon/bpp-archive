@@ -45,7 +45,7 @@ class Game(db.Model):
             first_img = first_book.get_first_image_page()
             if first_img:
                 return first_img.content_url
-        return "/static/default_game.png"
+        return None
 
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)

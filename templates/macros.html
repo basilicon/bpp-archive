@@ -64,8 +64,8 @@
             {% if first_image %}
             <img src="{{ first_image.content_url }}" alt="Book Preview" class="w-100 h-100 object-fit-cover">
             {% else %}
-            <div class="placeholder-img bg-light text-muted d-flex align-items-center justify-content-center h-100">
-                <span><i class="bi bi-image"></i> No Image</span>
+            <div class="bg-light text-muted d-flex align-items-center justify-content-center h-100" style="min-height: 200px;">
+                <span class="fw-bold tracking-wide text-secondary px-3 py-2 border border-secondary rounded">NO PREVIEW</span>
             </div>
             {% endif %}
         </div>
@@ -92,7 +92,14 @@
     <a href="{{ url_for('game_detail', game_id=game.id) }}" class="text-decoration-none">
         <div class="card h-100 border-0 shadow-sm transition-hover">
             <div class="position-relative">
-                <img src="{{ game.get_preview_image() }}" class="card-img-top object-fit-cover" alt="Game Preview" style="height: 200px;">
+                {% set game_preview_img = game.get_preview_image() %}
+                {% if game_preview_img %}
+                <img src="{{ game_preview_img }}" class="card-img-top object-fit-cover" alt="Game Preview" style="height: 200px;">
+                {% else %}
+                <div class="bg-light text-muted d-flex align-items-center justify-content-center card-img-top" style="height: 200px;">
+                    <span class="fw-bold tracking-wide text-secondary px-3 py-2 border border-secondary rounded">NO PREVIEW</span>
+                </div>
+                {% endif %}
                 <div class="position-absolute top-0 end-0 m-2">
                     <span class="badge bg-dark bg-opacity-75"><i class="bi bi-calendar-event"></i> {{ game.date.strftime('%m/%d/%Y') }}</span>
                 </div>

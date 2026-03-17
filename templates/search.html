@@ -3,57 +3,62 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <h1 class="mb-4">Search Archive</h1>
-        
-        <form action="{{ url_for('search') }}" method="get" class="mb-5">
-            <div class="d-flex gap-2 mb-2">
-                <input type="text" name="q" class="form-control form-control-lg" placeholder="Search for books, characters, or users..." value="{{ query }}">
-                <button type="submit" class="btn btn-primary btn-lg">Search</button>
-            </div>
-            <div class="form-text text-muted">
-                <i class="bi bi-info-circle"></i> Tip: Search for multiple characters by separating their names with commas (e.g., "Alice, Bob").
-            </div>
-        </form>
+    <div class="col-md-10">
+        <div class="glass-panel p-4 p-md-5 mb-5 shadow-sm text-center">
+            <h1 class="display-5 fw-bold mb-4">Search Archive</h1>
+            
+            <form action="{{ url_for('search') }}" method="get" class="mb-2 max-w-lg mx-auto">
+                <div class="input-group input-group-lg shadow-sm">
+                    <input type="text" name="q" class="form-control border-0" placeholder="Search books, characters, or users..." value="{{ query }}">
+                    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-search"></i> Search</button>
+                </div>
+                <div class="form-text text-muted mt-3 text-start">
+                    <i class="bi bi-info-circle"></i> Tip: Search for multiple characters by separating their names with commas (e.g., "Alice, Bob").
+                </div>
+            </form>
+        </div>
 
         {% if query %}
-            <h3>Results for "{{ query }}"</h3>
-            <hr>
+            <h3 class="fw-bold mb-4 border-bottom pb-2">Results for "{{ query }}"</h3>
 
             {% if advanced_pages is not none %}
-            <h5 class="mt-4 text-primary"><i class="bi bi-stars"></i> Advanced Character Matches</h5>
+            <h5 class="mt-4 text-primary fw-bold"><i class="bi bi-stars"></i> Advanced Character Matches</h5>
             {% if advanced_pages %}
                 <!-- Added a container to match character_detail.html styling -->
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+                <div class="masonry-grid mb-5">
                     {% for panel in advanced_pages %}
-                    <div class="col">
+                    <div class="masonry-item">
                         {{ panel_component(panel) }}
                     </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <p class="text-muted">No single panel found featuring all of these characters together.</p>
+                <div class="alert alert-light border shadow-sm text-muted text-center py-4 mb-5">
+                    No single panel found featuring all of these characters together.
+                </div>
             {% endif %}
-            <hr class="mt-5">
             {% endif %}
 
             {% if users %}
-            <h5 class="mt-4 text-muted">Users</h5>
-            <ul>
+            <h5 class="mt-4 text-muted fw-bold">Users</h5>
+            <div class="list-group list-group-flush mb-5 shadow-sm rounded">
                 {% for user in users %}
-                <li><a href="{{ url_for('user_detail', user_id=user.id) }}">{{ user.true_name }}</a></li>
+                <a href="{{ url_for('user_detail', user_id=user.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                    <span class="fw-bold">{{ user.true_name }}</span>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </a>
                 {% endfor %}
-            </ul>
+            </div>
             {% endif %}
 
             {% if characters %}
-            <h5 class="mt-4 text-muted">Characters</h5>
-            <div class="d-flex gap-3">
+            <h5 class="mt-4 text-muted fw-bold">Characters</h5>
+            <div class="d-flex flex-wrap gap-4 mb-5">
                 {% for char in characters %}
-                <div class="text-center">
-                    <a href="{{ url_for('character_detail', char_id=char.id) }}">
-                        <img src="{{ char.image_url }}" width="80" height="80" class="rounded-circle mb-2">
-                        <div class="small">{{ char.name }}</div>
+                <div class="text-center transition-hover">
+                    <a href="{{ url_for('character_detail', char_id=char.id) }}" class="text-decoration-none">
+                        <img src="{{ char.image_url }}" width="90" height="90" class="rounded-circle mb-2 shadow-sm border border-light object-fit-cover">
+                        <div class="small fw-bold text-dark">{{ char.name }}</div>
                     </a>
                 </div>
                 {% endfor %}
@@ -61,8 +66,8 @@
             {% endif %}
 
             {% if books %}
-            <h5 class="mt-4 text-muted">Books</h5>
-            <div class="row">
+            <h5 class="mt-4 text-muted fw-bold">Books</h5>
+            <div class="row g-4 mb-5">
                 {% for book in books %}
                 <div class="col-md-6">
                     {{ book_preview(book) }}
@@ -72,17 +77,23 @@
             {% endif %}
 
             {% if games %}
-
-            <h5 class="mt-4 text-muted">Games</h5>
-            <ul>
+            <h5 class="mt-4 text-muted fw-bold">Games</h5>
+            <div class="list-group list-group-flush mb-5 shadow-sm rounded">
                 {% for game in games %}
-                <li><a href="{{ url_for('game_detail', game_id=game.id) }}">{{ game.title }}</a></li>
+                <a href="{{ url_for('game_detail', game_id=game.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                    <span class="fw-bold">{{ game.title or game.display_title }}</span>
+                    <span class="badge bg-light text-dark border"><i class="bi bi-calendar"></i> {{ game.date.strftime('%B %d, %Y') }}</span>
+                </a>
                 {% endfor %}
-            </ul>
+            </div>
             {% endif %}
 
-            {% if not users and not characters and not books and not games %}
-            <p class="text-center text-muted mt-5">No results found.</p>
+            {% if not users and not characters and not books and not games and not advanced_pages %}
+            <div class="alert alert-light border shadow-sm text-center py-5 mt-4">
+                <i class="bi bi-search display-4 text-muted mb-3 d-block"></i>
+                <h5 class="text-muted fw-bold">No results found for "{{ query }}"</h5>
+                <p class="text-muted mb-0">Try double-checking your spelling or try another keyword.</p>
+            </div>
             {% endif %}
 
         {% endif %}

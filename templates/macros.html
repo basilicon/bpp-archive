@@ -1,31 +1,29 @@
 {% macro panel_component(page, show_book=True) %}
-<div class="panel-card">
+<div class="panel-card position-relative">
     <div class="panel-content">
         {% if page.type == 'text' %}
-        <blockquote class="text-panel">
+        <blockquote class="text-panel shadow-sm">
             {% for line in page.content_text.splitlines() %}
             <p class="mb-1">{{ line }}</p>
             {% endfor %}
         </blockquote>
         {% else %}
-
-
-        <a href="{{ url_for('panel_detail', page_id=page.id) }}">
-            <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}" class="img-fluid">
+        <a href="{{ url_for('panel_detail', page_id=page.id) }}" class="d-block mb-2">
+            <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}" class="img-fluid rounded shadow-sm">
         </a>
 
         {% if page.characters %}
         <div class="panel-chars">
-            <small>Featuring:
+            <small class="text-muted"><i class="bi bi-people-fill text-primary"></i> Featuring:
                 {% if page.characters|length < 5 %}
                 {% for char in page.characters %}
-                    <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
+                    <a href="{{ url_for('character_detail', char_id=char.id) }}" class="badge bg-light border text-dark text-decoration-none my-1">{{ char.name }}</a>
                 {% endfor %}
                 {% else %}
                 {% for char in page.characters[:4] %}
-                    <a href="{{ url_for('character_detail', char_id=char.id) }}">{{ char.name }}</a>
+                    <a href="{{ url_for('character_detail', char_id=char.id) }}" class="badge bg-light border text-dark text-decoration-none my-1">{{ char.name }}</a>
                 {% endfor %}
-                and {{ page.characters|length - 4 }} other{% if page.characters|length - 4 > 1 %}s{% endif %}
+                <span class="badge bg-secondary">and {{ page.characters|length - 4 }} other{% if page.characters|length - 4 > 1 %}s{% endif %}</span>
                 {% endif %}
             </small>
         </div>
@@ -33,22 +31,22 @@
         {% endif %}
 
         {% if show_book %}
-        <div class="panel-book">
+        <div class="panel-book mt-2">
             <small>
-                <a href="{{ url_for('book_detail', book_id=page.book.id) }}">View Full Book #{{page.book.id}}</a>
+                <a href="{{ url_for('book_detail', book_id=page.book.id) }}" class="text-decoration-none text-secondary"><i class="bi bi-book"></i> View Full Book #{{page.book.id}}</a>
             </small>
         </div>
         {% endif %}
     </div>
-    <div class="panel-footer">
-        <small>
+    <div class="panel-footer d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+        <small class="text-muted">
             By
             {% if page.author_alias.user %}
-            <a href="{{ url_for('user_detail', user_id=page.author_alias.user.id) }}">
+            <a href="{{ url_for('user_detail', user_id=page.author_alias.user.id) }}" class="text-dark fw-bold text-decoration-none">
                 {{ page.author_alias.name }}
             </a>
             {% else %}
-            {{ page.author_alias.name }} <span class="text-muted">(Unlinked)</span>
+            <span class="text-dark fw-bold">{{ page.author_alias.name }}</span> <span class="text-muted small">(Unlinked)</span>
             {% endif %}
         </small>
     </div>
@@ -60,28 +58,29 @@
 {% set first_image = book.get_first_image_page() %}
 {% set first_author = first_text.author_alias if first_text else None %}
 
-<div class="book-preview-card">
-    <a href="{{ url_for('book_detail', book_id=book.id) }}" class="text-decoration-none text-dark">
-        <div class="preview-image">
+<div class="book-preview-card border-0">
+    <a href="{{ url_for('book_detail', book_id=book.id) }}" class="text-decoration-none text-dark d-block">
+        <div class="preview-image position-relative">
             {% if first_image %}
-
-            <img src="{{ first_image.content_url }}" alt="Book Preview">
+            <img src="{{ first_image.content_url }}" alt="Book Preview" class="w-100 h-100 object-fit-cover">
             {% else %}
-            <div class="placeholder-img">No Image</div>
+            <div class="placeholder-img bg-light text-muted d-flex align-items-center justify-content-center h-100">
+                <span><i class="bi bi-image"></i> No Image</span>
+            </div>
             {% endif %}
         </div>
-        <div class="preview-caption">
-            <h5>{{ first_text.content_text if first_text else "Untitled" }}</h5>
+        <div class="preview-caption p-3">
+            <h5 class="mb-1 text-truncate">{{ first_text.content_text if first_text else "Untitled Book" }}</h5>
         </div>
     </a>
     {% if first_author %}
-    <div class="preview-footer">
+    <div class="preview-footer px-3 py-2 bg-light border-top text-muted small">
         {% if first_author.user %}
-        Started by <a href="{{ url_for('user_detail', user_id=first_author.user.id) }}">
+        <i class="bi bi-person"></i> Started by <a href="{{ url_for('user_detail', user_id=first_author.user.id) }}" class="text-decoration-none fw-bold text-dark">
             {{ first_author.name }}
         </a>
         {% else %}
-        Started by {{ first_author.name }} <span class="text-muted">(Unlinked)</span>
+        <i class="bi bi-person"></i> Started by <span class="fw-bold text-dark">{{ first_author.name }}</span> <span class="text-muted">(Unlinked)</span>
         {% endif %}
     </div>
     {% endif %}
@@ -89,14 +88,19 @@
 {% endmacro %}
 
 {% macro game_preview(game) %}
-<div class="game-preview-card">
-    <a href="{{ url_for('game_detail', game_id=game.id) }}">
-        <div class="game-thumbnail">
-            <img src="{{ game.get_preview_image() }}" alt="Game Preview">
-        </div>
-        <div class="game-info">
-            <h4>{{ game.display_title }}</h4>
-            <span class="text-muted">{{ game.books|length }} Books</span>
+<div class="game-preview-card h-100">
+    <a href="{{ url_for('game_detail', game_id=game.id) }}" class="text-decoration-none">
+        <div class="card h-100 border-0 shadow-sm transition-hover">
+            <div class="position-relative">
+                <img src="{{ game.get_preview_image() }}" class="card-img-top object-fit-cover" alt="Game Preview" style="height: 200px;">
+                <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge bg-dark bg-opacity-75"><i class="bi bi-calendar-event"></i> {{ game.date.strftime('%m/%d/%Y') }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title h5 mb-2 fw-bold text-dark">{{ game.display_title }}</h4>
+                <p class="card-text text-muted mb-0"><i class="bi bi-collection"></i> {{ game.books|length }} Books</p>
+            </div>
         </div>
     </a>
 </div>

@@ -13,21 +13,12 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <style>
-        /* Simple Custom Styles */
-        body { 
-            background-color: #2dcc70; 
-            font-family: 'Quicksand', sans-serif;
-        }
-        .panel-card { border: 1px solid #ddd; background: #fff; margin-bottom: 20px; padding: 15px; border-radius: 8px; }
-        .text-panel { font-family: "Courier New", Courier, monospace; font-size: 1.2rem; background: #eee; padding: 20px; border-radius: 5px; }
-        .connector { text-align: center; font-size: 2rem; color: #aaa; margin: -10px 0 10px 0; }
-        .book-preview-card { border: 1px solid #ccc; background: white; padding: 10px; margin-bottom: 15px; border-radius: 8px; transition: transform 0.2s; }
-        .book-preview-card:hover { transform: scale(1.02); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .preview-image img { width: 100%; object-fit: cover; border-radius: 4px; }
-    </style>
 
     <meta property="og:site_name" content="BPP Archive">
     <meta name="theme-color" content="#5865F2"> <title>{% block title %}Picturephone Archive{% endblock %}</title>
@@ -39,7 +30,7 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom mb-5">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">Broken Picture Phone Archive</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -68,11 +59,11 @@
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container page-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-            <div class="alert alert-{{ 'info' if category == 'message' else category }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ 'info' if category == 'message' else category }} alert-dismissible fade show shadow-sm" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
@@ -80,7 +71,9 @@
         {% endif %}
         {% endwith %}
 
-        {% block content %}{% endblock %}
+        <div class="glass-panel p-4 p-md-5 mb-5">
+            {% block content %}{% endblock %}
+        </div>
     </div>
 
     <footer class="text-center py-4 text-muted">

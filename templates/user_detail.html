@@ -13,9 +13,9 @@
         {# row-cols-2: 2 cols on mobile #}
         {# row-cols-md-3: 3 cols on tablets #}
         {# row-cols-lg-5: 5 cols on desktop #}
-        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
+        <div class="masonry-grid">
             {% for page in drawings.items %}
-                <div class="col">
+                <div class="masonry-item">
                     {{ panel_component(page) }}
                 </div>
             {% endfor %}

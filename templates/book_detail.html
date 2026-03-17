@@ -11,14 +11,14 @@
         <a href="{{ url_for('game_detail', game_id=book.game.id) }}" class="btn btn-sm btn-outline-secondary mb-3">
             &larr; From Game: {{ book.game.title if book.game.title else ("Game Night " + book.game.date.strftime('%m-%d-%Y')) }}
         </a>
-        <div class="book-stream">
-            {% for page in book.pages %}
-                {{ panel_component(page, show_book=False) }}
-                
-                {% if not loop.last %}
-                    <div class="connector">⬇</div>
-                {% endif %}
-            {% endfor %}
+    <div class="row">
+        <div class="col-lg-6 col-md-8 mx-auto">
+            <div class="book-stream">
+                {% for page in book.pages %}
+                    {{ panel_component(page, show_book=False) }}
+                {% endfor %}
+            </div>
         </div>
     </div>
+</div>
 {% endblock %}

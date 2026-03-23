@@ -8,7 +8,8 @@
 <div class="container mt-4">
     <div class="mb-4 text-start">
         <h5 class="text-muted fw-bold mb-1">
-            <a href="{{ url_for('game_detail', game_id=panel.book.game_id) }}" class="text-decoration-none text-secondary">
+            <a href="{{ url_for('game_detail', game_id=panel.book.game_id) }}"
+                class="text-decoration-none text-secondary">
                 <i class="bi bi-controller"></i> {{ panel.book.game.display_title }}
             </a>
         </h5>
@@ -334,7 +335,7 @@
                                 <input type="hidden" name="page_id" value="{{ panel.id }}">
                                 <input type="hidden" name="character_id" value="{{ char.id }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger border-0">
-                                    <i class="bi bi-x-circle-fill"></i> &times;
+                                    <i class="bi bi-x-circle-fill"></i>
                                 </button>
                             </form>
                             {% endif %}

@@ -43,6 +43,9 @@
             </nav>
             <h1 class="display-4">{{ character.name }}</h1>
             <p class="lead text-muted">{{ character.description or 'No description provided.' }}</p>
+            <a href="{{ url_for('character_statistics', char_id=character.id) }}" class="btn btn-outline-primary mt-2">
+                <i class="bi bi-bar-chart-fill"></i> View Statistics
+            </a>
         </div>
     </div>
 

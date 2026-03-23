@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block og_title %}Character Statistics: {{ character.name }}{% endblock %}
+{% block og_desc %}View appearance statistics for {{ character.name }}.{% endblock %}
+{% block og_image %}{{ character.image_url }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('character_list') }}">Characters</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('character_detail', char_id=character.id) }}">{{
+                    character.name }}</a></li>
+            <li class="breadcrumb-item active">Statistics</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-2 text-center">
+            <img src="{{ character.image_url or '/static/default_char.png' }}" class="img-fluid rounded shadow"
+                style="max-height: 150px; width: auto; object-fit: contain;">
+        </div>
+        <div class="col-md-10">
+            <h1 class="display-5">Statistics for {{ character.name }}</h1>
+            <p class="text-muted">Analyze appearances over time and artist distribution.</p>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row mt-4">
+        <div class="col-md-7 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-dark"><i class="bi bi-bar-chart-line-fill"></i> Appearances Over Time</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="timeframe" id="monthlyBtn" autocomplete="off"
+                            checked>
+                        <label class="btn btn-outline-primary" for="monthlyBtn">Monthly</label>
+
+                        <input type="radio" class="btn-check" name="timeframe" id="yearlyBtn" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="yearlyBtn">Yearly</label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="appearancesChart" style="max-height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-dark"><i class="bi bi-pie-chart-fill"></i> Artist Distribution</h5>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <div style="width: 50%;">
+                        <canvas id="artistChart" style="max-height: 250px;"></canvas>
+                    </div>
+                    <div id="artistLegendContainer" class="ms-3 overflow-auto" style="width: 50%; max-height: 250px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+
+<script>
+    // Since Flask tojson might not assign to a JS variable, we inline it:
+    const monthlyCounts = {{ monthly_counts | tojson }};
+    const yearlyCounts = {{ yearly_counts | tojson }};
+    const artistCounts = {{ artist_counts | tojson }};
+
+    // Calculate total to find threshold
+    const totalAppearances = artistCounts.reduce((sum, artist) => sum + artist.count, 0);
+    const threshold = totalAppearances * 0.02;
+
+    const chartLabels = [];
+    const chartData = [];
+    const chartColors = [];
+
+    let otherCount = 0;
+    const otherArtists = artistCounts.filter(a => a.count < threshold);
+    const useOther = otherArtists.length > 1;
+
+    // Generate nice colors for the Pie chart based on values length
+    const colors = [
+        '#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545',
+        '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0',
+        '#adb5bd', '#343a40', '#0a58ca', '#520dc2', '#59339d'
+    ];
+
+    let colorIndex = 0;
+    artistCounts.forEach(artist => {
+        if (useOther && artist.count < threshold) {
+            otherCount += artist.count;
+            artist.color = '#6c757d'; // Gray for "Other" in legend
+        } else {
+            const color = colors[colorIndex % colors.length];
+            chartLabels.push(artist.name);
+            chartData.push(artist.count);
+            chartColors.push(color);
+            artist.color = color; // Save matched color to object for legend
+            colorIndex++;
+        }
+    });
+
+    if (useOther) {
+        chartLabels.push("Other (< 2%)");
+        chartData.push(otherCount);
+        chartColors.push('#6c757d');
+    }
+
+    const ctxArtist = document.getElementById('artistChart').getContext('2d');
+    const artistChart = new Chart(ctxArtist, {
+        type: 'doughnut',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                data: chartData,
+                backgroundColor: chartColors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false } // Custom legend used instead
+            }
+        }
+    });
+
+    // Generate Custom Scrollable Legend
+    const legendContainer = document.getElementById('artistLegendContainer');
+    const ul = document.createElement('ul');
+    ul.className = 'list-group list-group-flush small w-100';
+    
+    artistCounts.forEach(artist => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center py-1 px-2 border-0';
+        li.innerHTML = `
+            <div class="text-truncate text-start" title="${artist.name}">
+                <span class="d-inline-block rounded-circle me-1" style="width: 10px; height: 10px; background-color: ${artist.color};"></span>
+                <a href="/user/${artist.id}" class="text-decoration-none text-dark fw-medium hover-primary">${artist.name}</a>
+            </div>
+            <span class="badge bg-secondary rounded-pill">${artist.count}</span>
+        `;
+        ul.appendChild(li);
+    });
+    legendContainer.appendChild(ul);
+
+    // Prepare Appearances Data (Bar Chart)
+    const ctxApp = document.getElementById('appearancesChart').getContext('2d');
+    let appearancesChart = new Chart(ctxApp, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(monthlyCounts),
+            datasets: [{
+                label: 'Appearances',
+                data: Object.values(monthlyCounts),
+                backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 } // whole numbers only
+                }
+            }
+        }
+    });
+
+    // Handle Toggle
+    document.getElementById('monthlyBtn').addEventListener('change', function () {
+        if (this.checked) {
+            appearancesChart.data.labels = Object.keys(monthlyCounts);
+            appearancesChart.data.datasets[0].data = Object.values(monthlyCounts);
+            appearancesChart.update();
+        }
+    });
+
+    document.getElementById('yearlyBtn').addEventListener('change', function () {
+        if (this.checked) {
+            appearancesChart.data.labels = Object.keys(yearlyCounts);
+            appearancesChart.data.datasets[0].data = Object.values(yearlyCounts);
+            appearancesChart.update();
+        }
+    });
+</script>
+{% endblock %}

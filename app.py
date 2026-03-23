@@ -310,6 +310,47 @@ def character_detail(char_id):
                            character=character, 
                            drawings=pagination)
 
+@app.route('/character/<int:char_id>/statistics')
+def character_statistics(char_id):
+    character = Character.query.get_or_404(char_id)
+    
+    # Query 1: Appearances over time
+    appearances = db.session.query(Page.id, Game.date)\
+        .join(Book, Page.book_id == Book.id)\
+        .join(Game, Book.game_id == Game.id)\
+        .filter(Page.characters.any(id=char_id), Page.type == 'image')\
+        .all()
+    
+    monthly_counts = {}
+    yearly_counts = {}
+    for _, game_date in appearances:
+        if game_date:
+            month_key = game_date.strftime('%Y-%m') # "YYYY-MM"
+            year_key = game_date.strftime('%Y')     # "YYYY"
+            monthly_counts[month_key] = monthly_counts.get(month_key, 0) + 1
+            yearly_counts[year_key] = yearly_counts.get(year_key, 0) + 1
+            
+    # Sort chronologically
+    monthly_counts = {k: v for k, v in sorted(monthly_counts.items())}
+    yearly_counts = {k: v for k, v in sorted(yearly_counts.items())}
+    
+    # Query 2: Artist Distribution
+    artist_data = db.session.query(User.id, User.true_name, func.count(Page.id).label('count'))\
+        .join(Alias, Alias.user_id == User.id)\
+        .join(Page, Page.alias_id == Alias.id)\
+        .filter(Page.characters.any(id=char_id), Page.type == 'image')\
+        .group_by(User.id, User.true_name)\
+        .order_by(func.count(Page.id).desc())\
+        .all()
+        
+    artist_counts = [{"id": row[0], "name": row[1], "count": row[2]} for row in artist_data]
+    
+    return render_template('character_statistics.html',
+                           character=character,
+                           monthly_counts=monthly_counts,
+                           yearly_counts=yearly_counts,
+                           artist_counts=artist_counts)
+
 @app.route('/daily')
 def daily_game():
     tz = pytz.timezone('America/New_York')

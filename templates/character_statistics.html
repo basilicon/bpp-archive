@@ -21,7 +21,7 @@
             <img src="{{ character.image_url or '/static/default_char.png' }}" class="img-fluid rounded shadow"
                 style="max-height: 150px; width: auto; object-fit: contain;">
         </div>
-        <div class="col-md-10">
+        <div class="col-md-10 text-center text-md-start mt-3 mt-md-0">
             <h1 class="display-5">Statistics for {{ character.name }}</h1>
             <p class="text-muted">Analyze appearances over time and artist distribution.</p>
         </div>
@@ -54,11 +54,11 @@
                 <div class="card-header bg-white">
                     <h5 class="mb-0 text-dark"><i class="bi bi-pie-chart-fill"></i> Artist Distribution</h5>
                 </div>
-                <div class="card-body d-flex align-items-center justify-content-center">
-                    <div style="width: 50%;">
+                <div class="card-body row align-items-center justify-content-center m-0">
+                    <div class="col-12 col-md-6 mb-3 mb-md-0 px-0">
                         <canvas id="artistChart" style="max-height: 250px;"></canvas>
                     </div>
-                    <div id="artistLegendContainer" class="ms-3 overflow-auto" style="width: 50%; max-height: 250px;">
+                    <div id="artistLegendContainer" class="col-12 col-md-6 overflow-auto px-0 ps-md-3" style="max-height: 250px;">
                     </div>
                 </div>
             </div>

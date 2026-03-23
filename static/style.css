@@ -295,8 +295,14 @@ h6 {
 
 /* Masonry Grid Layout for Panels */
 .masonry-grid {
-    column-count: 2;
+    column-count: 1;
     column-gap: 1.5rem;
+}
+
+@media (min-width: 576px) {
+    .masonry-grid {
+        column-count: 2;
+    }
 }
 
 @media (min-width: 768px) {

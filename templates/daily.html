@@ -43,6 +43,13 @@
                 </button>
             </div>
 
+            <!-- Previous Guesses -->
+            <div id="previous-guesses-area" class="mt-3 d-none">
+                <h6 class="text-center text-muted">Previous Guesses</h6>
+                <ul id="previous-guesses-list" class="list-group list-group-sm text-center">
+                </ul>
+            </div>
+
             <div id="game-over-area" class="mt-4 text-center d-none">
                 <div id="status-alert" class="alert shadow">
                     <h4 id="status-title"></h4>
@@ -87,6 +94,7 @@
 
     let guesses = 0;
     let gameOver = false;
+    let pastGuesses = [];
 
     // Load saved state if exists
     window.addEventListener('DOMContentLoaded', () => {
@@ -96,16 +104,48 @@
             guesses = data.guesses;
             gameOver = data.gameOver;
             const won = data.won;
+            
+            if (data.pastGuesses) {
+                pastGuesses = data.pastGuesses;
+            }
 
             if (gameOver) {
                 // If they finished previously, jump straight to the end
                 endGame(won, false); // false means "don't save again"
+                renderPastGuesses();
             } else {
                 // If they were mid-game, restore their guess count
                 updateUI();
+                renderPastGuesses();
+                
+                // Remove already guessed options
+                const selectEl = document.getElementById('author-search');
+                pastGuesses.forEach(pg => {
+                    const opt = Array.from(selectEl.options).find(o => o.value === String(pg.id));
+                    if (opt) selectEl.removeChild(opt);
+                });
             }
         }
     });
+
+    function renderPastGuesses() {
+        if (pastGuesses.length > 0) {
+            document.getElementById('previous-guesses-area').classList.remove('d-none');
+            const list = document.getElementById('previous-guesses-list');
+            list.innerHTML = '';
+            pastGuesses.forEach(g => {
+                const li = document.createElement('li');
+                if (g.id == correctUserId) {
+                    li.className = 'list-group-item text-success py-1';
+                    li.innerText = '✅ ' + g.name;
+                } else {
+                    li.className = 'list-group-item text-danger py-1';
+                    li.innerText = '❌ ' + g.name;
+                }
+                list.appendChild(li);
+            });
+        }
+    }
 
     // 2. The Main Guess Function
     function makeGuess() {
@@ -121,16 +161,23 @@
             return;
         }
 
+        const optionEl = Array.from(selectEl.options).find(o => o.value === String(val));
+        const authorName = optionEl ? optionEl.text : "Unknown Artist";
+
         if (val == correctUserId) {
+            pastGuesses.push({ id: val, name: authorName });
+            renderPastGuesses();
             endGame(true);
         } else {
+            pastGuesses.push({ id: val, name: authorName });
             guesses++;
             updateUI();
+            renderPastGuesses();
             saveState(false);
 
             if (selectEl.tomselect) selectEl.tomselect.clear();
 
-            selectEl.removeChild(selectEl.querySelector(`option[value="${val}"]`));
+            if (optionEl) selectEl.removeChild(optionEl);
 
             if (guesses >= 6) {
                 endGame(false);
@@ -142,7 +189,8 @@
         const state = {
             guesses: guesses,
             gameOver: gameOver,
-            won: won
+            won: won,
+            pastGuesses: pastGuesses
         };
         localStorage.setItem(storageKey, JSON.stringify(state));
     }

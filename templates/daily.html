@@ -14,7 +14,8 @@
         <div class="col-md-6">
             <div class="card shadow mb-4">
                 <div class="position-relative overflow-hidden">
-                    <img src="{{ panel.content_url }}" class="img-fluid blur-effect" id="daily-image">
+                    <img src="{{ panel.content_url }}" class="img-fluid blur-effect img-loading" id="daily-image"
+                        onload="this.classList.remove('img-loading')">
                 </div>
 
                 <ul class="list-group list-group-flush" id="clue-list">
@@ -104,7 +105,7 @@
             guesses = data.guesses;
             gameOver = data.gameOver;
             const won = data.won;
-            
+
             if (data.pastGuesses) {
                 pastGuesses = data.pastGuesses;
             }
@@ -117,7 +118,7 @@
                 // If they were mid-game, restore their guess count
                 updateUI();
                 renderPastGuesses();
-                
+
                 // Remove already guessed options
                 const selectEl = document.getElementById('author-search');
                 pastGuesses.forEach(pg => {

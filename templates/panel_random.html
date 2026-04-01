@@ -27,9 +27,10 @@
             <div class="p-2 bg-dark text-white small">
                 From the book: <em id="panel-prompt"></em>
             </div>
-            
-            <img src="" id="panel-img" class="img-fluid border-bottom" alt="Random Panel">
-            
+
+            <img src="" id="panel-img" class="img-fluid border-bottom img-loading" alt="Random Panel"
+                onload="this.classList.remove('img-loading')">
+
             <div class="card-body">
                 <p class="mb-2">Drawn by: <strong id="panel-author"></strong></p>
                 <div class="d-flex justify-content-center gap-2">
@@ -46,7 +47,7 @@
     async function fetchRandomPanel(untagged = false) {
         const display = document.getElementById('panel-display');
         const loader = document.getElementById('loading-spinner');
-        
+
         display.classList.add('d-none');
         loader.classList.remove('d-none');
 
@@ -59,15 +60,16 @@
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error('Not found');
-            
+
             const data = await response.json();
 
+            document.getElementById('panel-img').classList.add('img-loading');
             document.getElementById('panel-img').src = data.content_url;
             document.getElementById('panel-author').innerHTML = `<a href="/user/${data.author_id}">${data.author}</a>`;
             document.getElementById('panel-prompt').innerText = `"${data.prompt}"`;
             document.getElementById('view-book-btn').href = `/book/${data.book_id}`;
             document.getElementById('view-game-btn').href = `/game/${data.game_id}`;
-            
+
             window.currentPanelId = data.id;
 
             display.classList.remove('d-none');

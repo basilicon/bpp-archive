@@ -327,3 +327,20 @@ h6 {
     break-inside: avoid;
     margin-bottom: 1.5rem;
 }
+
+/* Image loading placeholder */
+@keyframes skeleton-loading {
+    0% {
+        background-color: #e2e5e7;
+    }
+    100% {
+        background-color: #f1f3f5;
+    }
+}
+
+.img-loading {
+    animation: skeleton-loading 1s linear infinite alternate;
+    color: transparent; /* Hide broken image alt text while loading */
+    background-size: 200% 100%;
+    min-height: 200px;
+}

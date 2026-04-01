@@ -25,7 +25,8 @@
         <div class="col-md-8">
             <div class="card shadow">
                 {% if panel.type == 'image' %}
-                <img src="{{ panel.content_url }}" class="img-fluid rounded-start" alt="BPP Drawing">
+                <img src="{{ panel.content_url }}" class="img-fluid rounded-start img-loading" alt="BPP Drawing"
+                    onload="this.classList.remove('img-loading')">
                 {% else %}
                 <div class="card-body py-5 text-center">
                     {% for line in panel.content_text.splitlines() %}

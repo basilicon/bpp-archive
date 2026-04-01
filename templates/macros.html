@@ -10,7 +10,7 @@
         {% else %}
         <a href="{{ url_for('panel_detail', page_id=page.id) }}" class="d-block mb-2">
             <img src="{{ page.content_url }}" alt="Drawing by {{ page.author_alias.name }}"
-                class="img-fluid rounded shadow-sm">
+                class="img-fluid rounded shadow-sm img-loading" onload="this.classList.remove('img-loading')">
         </a>
 
         {% if page.characters %}
@@ -69,7 +69,8 @@
     <a href="{{ url_for('book_detail', book_id=book.id) }}" class="text-decoration-none text-dark d-block">
         <div class="preview-image position-relative">
             {% if first_image %}
-            <img src="{{ first_image.content_url }}" alt="Book Preview" class="w-100 h-100 object-fit-cover">
+            <img src="{{ first_image.content_url }}" alt="Book Preview" class="w-100 h-100 object-fit-cover img-loading"
+                onload="this.classList.remove('img-loading')">
             {% else %}
             <div class="bg-light text-muted d-flex align-items-center justify-content-center h-100"
                 style="min-height: 200px;">
@@ -79,7 +80,8 @@
             {% endif %}
         </div>
         <div class="preview-caption p-3">
-            <h5 class="mb-1" title="{{ book.get_preview_text() }}">{{ book.get_preview_text() | truncate(50, True, '...') }}</h5>
+            <h5 class="mb-1" title="{{ book.get_preview_text() }}">{{ book.get_preview_text() | truncate(50, True,
+                '...') }}</h5>
         </div>
     </a>
     {% if first_author %}
@@ -105,8 +107,8 @@
             <div class="position-relative">
                 {% set game_preview_img = game.get_preview_image() %}
                 {% if game_preview_img %}
-                <img src="{{ game_preview_img }}" class="card-img-top object-fit-cover" alt="Game Preview"
-                    style="height: 200px;">
+                <img src="{{ game_preview_img }}" class="card-img-top object-fit-cover img-loading" alt="Game Preview"
+                    style="height: 200px;" onload="this.classList.remove('img-loading')">
                 {% else %}
                 <div class="bg-light text-muted d-flex align-items-center justify-content-center card-img-top"
                     style="height: 200px;">

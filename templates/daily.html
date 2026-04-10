@@ -7,7 +7,50 @@
 <div class="container mt-4">
     <div class="text-center mb-4">
         <h2>📅 Daily Panel Challenge</h2>
+        {% if target_date != today_date %}
+        <p class="text-muted fw-bold">Playing past puzzle from {{ target_date.strftime('%B %d, %Y') }}</p>
+        {% endif %}
         <p>Can you guess who drew this panel?</p>
+
+        <!-- Navigation -->
+        <div class="d-flex justify-content-center align-items-center mb-3 gap-3">
+            <a href="{{ url_for('daily_game', date_str=prev_date.strftime('%Y-%m-%d')) }}" class="btn btn-outline-secondary btn-sm">
+                &laquo; Previous Day
+            </a>
+            <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#calendarCollapse" aria-expanded="false" aria-controls="calendarCollapse">
+                Past Days
+            </button>
+            {% if next_date %}
+            <a href="{{ url_for('daily_game', date_str=next_date.strftime('%Y-%m-%d')) }}" class="btn btn-outline-secondary btn-sm">
+                Next Day &raquo;
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary btn-sm" disabled>Next Day &raquo;</button>
+            {% endif %}
+        </div>
+        
+        <!-- Calendar View -->
+        <div class="collapse mb-4" id="calendarCollapse">
+            <div class="card card-body">
+                <h5 class="card-title text-center">14-Day View</h5>
+                <div class="d-flex flex-wrap justify-content-center gap-2" id="calendarGrid">
+                    {% for d_str in history_dates %}
+                        {% set is_active = (d_str == target_date.strftime('%Y-%m-%d')) %}
+                        <a href="{{ url_for('daily_game', date_str=d_str) }}" 
+                           class="btn {% if is_active %}btn-secondary{% else %}btn-outline-secondary{% endif %} btn-sm history-day" 
+                           data-date="{{ d_str }}"
+                           data-challenge-id="{{ history_dict.get(d_str, '') }}">
+                           {{ d_str[5:] }} <!-- Show MM-DD -->
+                        </a>
+                    {% endfor %}
+                </div>
+                <div class="mt-2 text-muted small text-center">
+                    <span class="text-success fw-bold">Green: Won</span> | 
+                    <span class="text-danger fw-bold">Red: Lost</span> | 
+                    <span class="text-warning fw-bold">Yellow: In Progress</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row justify-content-center">
@@ -99,6 +142,34 @@
 
     // Load saved state if exists
     window.addEventListener('DOMContentLoaded', () => {
+        // --- CALENDAR COLOR CODING ---
+        document.querySelectorAll('.history-day').forEach(el => {
+            const id = el.dataset.challengeId;
+            if(id) {
+                const storageKeyForPast = `daily_game_${id}`;
+                const data = localStorage.getItem(storageKeyForPast);
+                
+                if(data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if(parsed.gameOver) {
+                            el.classList.remove('btn-outline-secondary', 'btn-secondary');
+                            if(parsed.won) {
+                                el.classList.add('btn-success');
+                            } else {
+                                el.classList.add('btn-danger');
+                            }
+                        } else if(parsed.guesses > 0) {
+                            el.classList.remove('btn-outline-secondary', 'btn-secondary');
+                            el.classList.add('btn-warning');
+                        }
+                    } catch(e) {
+                        console.error("Failed parsing localStorage for history", e);
+                    }
+                }
+            }
+        });
+        
         const savedState = localStorage.getItem(storageKey);
         if (savedState) {
             const data = JSON.parse(savedState);

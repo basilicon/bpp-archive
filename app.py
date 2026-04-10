@@ -4,7 +4,7 @@ from sqlalchemy import Engine, or_, Date, event, func, text, select
 from sqlalchemy.exc import IntegrityError
 from functools import wraps
 import os
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import random
 import uuid
 from import_bpp import process_html_content
@@ -352,17 +352,28 @@ def character_statistics(char_id):
                            artist_counts=artist_counts)
 
 @app.route('/daily')
-def daily_game():
+@app.route('/daily/<date_str>')
+def daily_game(date_str=None):
     tz = pytz.timezone('America/New_York')
     today_date = datetime.now(tz).date()
 
+    target_date = today_date
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            target_date = today_date
+            
+        if target_date > today_date:
+            return redirect(url_for('daily_game'))
+
     # 1. Check if the challenge already exists
-    challenge = DailyChallenge.query.filter_by(date=today_date).first()
+    challenge = DailyChallenge.query.filter_by(date=target_date).first()
 
     if not challenge:
         # 2. Convert date to a float between -1 and 1 for Postgres setseed()
         # We use the integer timestamp and a bit of math to generate a seed
-        seed_value = int(today_date.strftime('%Y%m%d')) / 100000000.0
+        seed_value = int(target_date.strftime('%Y%m%d')) / 100000000.0
         
         # 3. Set the seed in the current database session
         db.session.execute(text(f"SELECT setseed({seed_value})"))
@@ -388,7 +399,7 @@ def daily_game():
         daily_panel = db.session.execute(sql_query).fetchone()
 
         if daily_panel:
-            new_challenge = DailyChallenge(date=today_date, page_id=daily_panel.id)
+            new_challenge = DailyChallenge(date=target_date, page_id=daily_panel.id)
             db.session.add(new_challenge)
             try:
                 db.session.commit()
@@ -396,7 +407,7 @@ def daily_game():
             except IntegrityError:
                 # Someone else's request finished a millisecond faster
                 db.session.rollback()
-                challenge = DailyChallenge.query.filter_by(date=today_date).first()
+                challenge = DailyChallenge.query.filter_by(date=target_date).first()
 
     # 3. Use the stored panel
     panel = challenge.panel
@@ -411,12 +422,28 @@ def daily_game():
     # sort authors by true_name
     authors = sorted(authors, key=lambda u: u.true_name.lower())
     
+    # Navigation logic
+    prev_date = target_date - timedelta(days=1)
+    next_date = target_date + timedelta(days=1) if target_date < today_date else None
+    
+    # History for calendar (14-day window centered around target_date)
+    window_end = min(today_date, target_date + timedelta(days=6))
+    history_dates = [(window_end - timedelta(days=i)) for i in range(14)]
+    recent_challenges = DailyChallenge.query.filter(DailyChallenge.date.in_(history_dates)).all()
+    history_dict = {c.date.strftime('%Y-%m-%d'): c.id for c in recent_challenges}
+    
     return render_template('daily.html', 
                            panel=panel, 
                            challenge=challenge,
                            correct_author_id=correct_author_id,
                            first_prompt=first_prompt, 
-                           authors=authors)
+                           authors=authors,
+                           target_date=target_date,
+                           prev_date=prev_date,
+                           next_date=next_date,
+                           history_dates=[d.strftime('%Y-%m-%d') for d in history_dates],
+                           history_dict=history_dict,
+                           today_date=today_date)
 
 # Decorator to protect admin routes
 def admin_required(f):

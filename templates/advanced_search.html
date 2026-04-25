@@ -103,7 +103,7 @@
                 <nav aria-label="Page navigation">
                     <ul class="pagination justify-content-center">
                         <li class="page-item {% if not results.has_prev %}disabled{% endif %}">
-                            <a class="page-link" href="{{ url_for('advanced_search', page=results.prev_num, **request.args) }}" aria-label="Previous">
+                            <a class="page-link" href="{{ url_for('advanced_search', page=results.prev_num, **query_args) }}" aria-label="Previous">
                                 <span aria-hidden="true">&laquo;</span>
                             </a>
                         </li>
@@ -111,7 +111,7 @@
                         {% for p in results.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                             {% if p %}
                                 <li class="page-item {% if p == results.page %}active{% endif %}">
-                                    <a class="page-link" href="{{ url_for('advanced_search', page=p, **request.args) }}">{{ p }}</a>
+                                    <a class="page-link" href="{{ url_for('advanced_search', page=p, **query_args) }}">{{ p }}</a>
                                 </li>
                             {% else %}
                                 <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -119,7 +119,7 @@
                         {% endfor %}
                         
                         <li class="page-item {% if not results.has_next %}disabled{% endif %}">
-                            <a class="page-link" href="{{ url_for('advanced_search', page=results.next_num, **request.args) }}" aria-label="Next">
+                            <a class="page-link" href="{{ url_for('advanced_search', page=results.next_num, **query_args) }}" aria-label="Next">
                                 <span aria-hidden="true">&raquo;</span>
                             </a>
                         </li>

@@ -188,10 +188,19 @@ def advanced_search():
         page = request.args.get('page', 1, type=int)
         results = query.order_by(Game.date.desc(), Page.book_id.desc(), Page.sequence.desc()).paginate(page=page, per_page=20, error_out=False)
 
+    # Build query args excluding 'page' for pagination links
+    query_args = {}
+    for key in request.args.keys():
+        if key != 'page':
+            # use getlist to preserve multiple values for artists, characters, etc.
+            vals = request.args.getlist(key)
+            query_args[key] = vals if len(vals) > 1 else vals[0]
+
     return render_template('advanced_search.html', 
                            users=users, 
                            characters=characters, 
-                           results=results)
+                           results=results,
+                           query_args=query_args)
 
 @app.route('/panel/<int:page_id>')
 def panel_detail(page_id):

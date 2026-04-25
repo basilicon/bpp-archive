@@ -128,6 +128,71 @@ def search():
                             games=games,
                             advanced_pages=advanced_pages)
 
+@app.route('/advanced-search')
+def advanced_search():
+    # 1. Fetch Users and Characters for the form
+    users = User.query.order_by(User.true_name).all()
+    characters = Character.query.order_by(Character.name).all()
+
+    # 2. Extract arguments
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    artists = request.args.getlist('artists') # List of User IDs
+    artist_filter_type = request.args.get('artist_filter_type', 'include') # 'include' or 'exclude'
+    whitelist_chars = request.args.getlist('whitelist_characters') # List of Character IDs
+    blacklist_chars = request.args.getlist('blacklist_characters') # List of Character IDs
+
+    # Are there any active filters?
+    has_filters = any([start_date_str, end_date_str, artists, whitelist_chars, blacklist_chars])
+
+    results = None
+    if has_filters:
+        # Base query for image pages
+        query = Page.query.join(Book, Page.book_id == Book.id).join(Game, Book.game_id == Game.id).join(Alias, Page.alias_id == Alias.id).filter(Page.type == 'image')
+
+        # Date Filters
+        if start_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                query = query.filter(Game.date >= start_date)
+            except ValueError:
+                pass
+        
+        if end_date_str:
+            try:
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                query = query.filter(Game.date <= end_date)
+            except ValueError:
+                pass
+
+        # Artist Filters
+        if artists:
+            artist_ids = [int(a) for a in artists if a.isdigit()]
+            if artist_ids:
+                if artist_filter_type == 'include':
+                    query = query.filter(Alias.user_id.in_(artist_ids))
+                elif artist_filter_type == 'exclude':
+                    query = query.filter(Alias.user_id.notin_(artist_ids))
+
+        # Character Filters
+        if whitelist_chars:
+            char_ids = [int(c) for c in whitelist_chars if c.isdigit()]
+            for char_id in char_ids:
+                query = query.filter(Page.characters.any(Character.id == char_id))
+        
+        if blacklist_chars:
+            char_ids = [int(c) for c in blacklist_chars if c.isdigit()]
+            if char_ids:
+                query = query.filter(~Page.characters.any(Character.id.in_(char_ids)))
+
+        page = request.args.get('page', 1, type=int)
+        results = query.order_by(Game.date.desc(), Page.book_id.desc(), Page.sequence.desc()).paginate(page=page, per_page=20, error_out=False)
+
+    return render_template('advanced_search.html', 
+                           users=users, 
+                           characters=characters, 
+                           results=results)
+
 @app.route('/panel/<int:page_id>')
 def panel_detail(page_id):
     panel = Page.query.get_or_404(page_id)

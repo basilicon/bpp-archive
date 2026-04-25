@@ -12,8 +12,11 @@
                     <input type="text" name="q" class="form-control border-0" placeholder="Search books, characters, or users..." value="{{ query }}">
                     <button type="submit" class="btn btn-primary px-4"><i class="bi bi-search"></i> Search</button>
                 </div>
-                <div class="form-text text-muted mt-3 text-start">
-                    <i class="bi bi-info-circle"></i> Tip: Search for multiple characters by separating their names with commas (e.g., "Alice, Bob").
+                <div class="d-flex justify-content-between align-items-center mt-3 text-start">
+                    <div class="form-text text-muted mb-0">
+                        <i class="bi bi-info-circle"></i> Tip: Search for multiple characters by separating their names with commas (e.g., "Alice, Bob").
+                    </div>
+                    <a href="{{ url_for('advanced_search') }}" class="btn btn-sm btn-outline-primary ms-3 text-nowrap"><i class="bi bi-sliders"></i> Advanced Panel Search</a>
                 </div>
             </form>
         </div>

@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import panel_component %}
+
+{% block title %}Advanced Panel Search - BPP Archive{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-5 fw-bold mb-0">Advanced Panel Search</h1>
+            <a href="{{ url_for('search') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Basic Search</a>
+        </div>
+        
+        <div class="card shadow-sm border-0 mb-5">
+            <div class="card-body p-4 p-md-5">
+                <form action="{{ url_for('advanced_search') }}" method="get">
+                    
+                    <!-- Date Range -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label fw-bold">Drawn After (or on)</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.args.get('start_date', '') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label fw-bold">Drawn Before (or on)</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.args.get('end_date', '') }}">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Artists -->
+                    <div class="mb-4">
+                        <label for="artists" class="form-label fw-bold">Filter by Artists</label>
+                        <div class="mb-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="artist_filter_type" id="filter_include" value="include" {% if request.args.get('artist_filter_type', 'include') == 'include' %}checked{% endif %}>
+                                <label class="form-check-label text-success fw-semibold" for="filter_include">Whitelist (Include only these)</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="artist_filter_type" id="filter_exclude" value="exclude" {% if request.args.get('artist_filter_type') == 'exclude' %}checked{% endif %}>
+                                <label class="form-check-label text-danger fw-semibold" for="filter_exclude">Blacklist (Exclude these)</label>
+                            </div>
+                        </div>
+                        <select id="artists" name="artists" multiple class="form-select" placeholder="Select artists...">
+                            <option value="">Select artists...</option>
+                            {% set selected_artists = request.args.getlist('artists') %}
+                            {% for user in users %}
+                                <option value="{{ user.id }}" {% if user.id|string in selected_artists %}selected{% endif %}>{{ user.true_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Characters -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label for="whitelist_characters" class="form-label fw-bold text-success"><i class="bi bi-check-circle"></i> Whitelisted Characters</label>
+                            <div class="form-text mb-2">Panel MUST contain ALL of these.</div>
+                            <select id="whitelist_characters" name="whitelist_characters" multiple class="form-select" placeholder="Select characters to include...">
+                                <option value="">Select characters to include...</option>
+                                {% set selected_wl_chars = request.args.getlist('whitelist_characters') %}
+                                {% for char in characters %}
+                                    <option value="{{ char.id }}" {% if char.id|string in selected_wl_chars %}selected{% endif %}>{{ char.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="blacklist_characters" class="form-label fw-bold text-danger"><i class="bi bi-x-circle"></i> Blacklisted Characters</label>
+                            <div class="form-text mb-2">Panel MUST NOT contain ANY of these.</div>
+                            <select id="blacklist_characters" name="blacklist_characters" multiple class="form-select" placeholder="Select characters to exclude...">
+                                <option value="">Select characters to exclude...</option>
+                                {% set selected_bl_chars = request.args.getlist('blacklist_characters') %}
+                                {% for char in characters %}
+                                    <option value="{{ char.id }}" {% if char.id|string in selected_bl_chars %}selected{% endif %}>{{ char.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm"><i class="bi bi-search"></i> Search Panels</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if results is not none %}
+            <h3 class="fw-bold mb-4 border-bottom pb-2">Search Results <span class="badge bg-secondary rounded-pill fs-6 align-middle">{{ results.total }} found</span></h3>
+
+            {% if results.items %}
+                <div class="masonry-grid mb-5">
+                    {% for panel in results.items %}
+                    <div class="masonry-item">
+                        {{ panel_component(panel) }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if results.pages > 1 %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if not results.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('advanced_search', page=results.prev_num, **request.args) }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        
+                        {% for p in results.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if p %}
+                                <li class="page-item {% if p == results.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('advanced_search', page=p, **request.args) }}">{{ p }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <li class="page-item {% if not results.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('advanced_search', page=results.next_num, **request.args) }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-light border shadow-sm text-center py-5 mb-5">
+                    <i class="bi bi-search display-4 text-muted mb-3 d-block"></i>
+                    <h5 class="text-muted fw-bold">No panels matched your criteria.</h5>
+                    <p class="text-muted mb-0">Try adjusting your filters.</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Initialize TomSelect for all multiple selects
+        new TomSelect("#artists",{
+            plugins: ['remove_button'],
+            maxItems: null,
+            placeholder: "Select artists..."
+        });
+        
+        new TomSelect("#whitelist_characters",{
+            plugins: ['remove_button'],
+            maxItems: null,
+            placeholder: "Select characters to include..."
+        });
+        
+        new TomSelect("#blacklist_characters",{
+            plugins: ['remove_button'],
+            maxItems: null,
+            placeholder: "Select characters to exclude..."
+        });
+    });
+</script>
+{% endblock %}

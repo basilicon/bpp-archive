@@ -504,11 +504,17 @@ def daily_game(date_str=None):
     window_end = min(today_date, target_date + timedelta(days=6))
     history_dates = [(window_end - timedelta(days=i)) for i in range(14)]
     recent_challenges = DailyChallenge.query.filter(DailyChallenge.date.in_(history_dates)).all()
-    history_dict = {c.date.strftime('%Y-%m-%d'): c.id for c in recent_challenges}
+    
+    # Calculate day number based on a fixed start date (Jan 13, 2026 = Day 1, so Apr 30, 2026 = Day 108)
+    start_date_ref = date(2026, 1, 13)
+    day_number = (target_date - start_date_ref).days + 1
+    
+    history_dict = {c.date.strftime('%Y-%m-%d'): (c.date - start_date_ref).days + 1 for c in recent_challenges}
     
     return render_template('daily.html', 
                            panel=panel, 
                            challenge=challenge,
+                           day_number=day_number,
                            correct_author_id=correct_author_id,
                            first_prompt=first_prompt, 
                            authors=authors,

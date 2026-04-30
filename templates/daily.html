@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
-{% block og_title %}Daily Panel Challenge #{{ challenge.id }}{% endblock %}
+{% block og_title %}Daily Panel Challenge #{{ day_number }}{% endblock %}
 {% block og_desc %}6 guesses to rule them all!{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="text-center mb-4">
-        <h2>📅 Daily Panel Challenge</h2>
+        <h2>📅 Daily Panel Challenge #{{ day_number }}</h2>
         {% if target_date != today_date %}
         <p class="text-muted fw-bold">Playing past puzzle from {{ target_date.strftime('%B %d, %Y') }}</p>
         {% endif %}
@@ -133,7 +133,7 @@
 <script>
     // 1. Setup Variables from Flask
     const correctUserId = {{ correct_author_id | tojson }};
-    const challengeId = {{ challenge.id | tojson }};
+    const challengeId = {{ day_number | tojson }};
     const storageKey = `daily_game_${challengeId}`;
 
     let guesses = 0;

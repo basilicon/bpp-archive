@@ -5,6 +5,9 @@
     <div class="user-profile container mt-4">
         <h1>{{ user.true_name }}</h1>
         <p class="lead text-muted">{{ user.description }}</p>
+        <a href="{{ url_for('user_statistics', user_id=user.id) }}" class="btn btn-outline-primary mt-2 mb-4">
+            <i class="bi bi-bar-chart-fill"></i> View Statistics
+        </a>
         
         <hr>
 

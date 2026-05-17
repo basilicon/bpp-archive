@@ -1,29 +1,24 @@
 {% extends 'base.html' %}
 
-{% block og_title %}Character Statistics: {{ character.name }}{% endblock %}
-{% block og_desc %}View appearance statistics for {{ character.name }}.{% endblock %}
-{% block og_image %}{{ character.image_url }}{% endblock %}
+{% block og_title %}User Statistics: {{ user.true_name }}{% endblock %}
+{% block og_desc %}View drawing statistics for {{ user.true_name }}.{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('character_list') }}">Characters</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('character_detail', char_id=character.id) }}">{{
-                    character.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('user_list') }}">Users</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('user_detail', user_id=user.id) }}">{{ user.true_name }}</a>
+            </li>
             <li class="breadcrumb-item active">Statistics</li>
         </ol>
     </nav>
 
     <div class="row mb-4 align-items-center">
-        <div class="col-md-2 text-center">
-            <img src="{{ character.image_url or '/static/default_char.png' }}" class="img-fluid rounded shadow"
-                style="max-height: 150px; width: auto; object-fit: contain;">
-        </div>
-        <div class="col-md-10 text-center text-md-start mt-3 mt-md-0">
-            <h1 class="display-5">Statistics for {{ character.name }}</h1>
-            <p class="text-muted">Analyze appearances over time and artist distribution.</p>
+        <div class="col-md-12 text-center text-md-start mt-3 mt-md-0">
+            <h1 class="display-5">Statistics for {{ user.true_name }}</h1>
+            <p class="text-muted">Analyze panels drawn over time and character distribution.</p>
         </div>
     </div>
 
@@ -33,7 +28,7 @@
         <div class="col-md-7 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 text-dark"><i class="bi bi-bar-chart-line-fill"></i> Appearances Over Time</h5>
+                    <h5 class="mb-0 text-dark"><i class="bi bi-bar-chart-line-fill"></i> Panels Drawn Over Time</h5>
                     <div class="btn-group btn-group-sm" role="group">
                         <input type="radio" class="btn-check" name="timeframe" id="monthlyBtn" autocomplete="off"
                             checked>
@@ -52,13 +47,14 @@
         <div class="col-md-5 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0 text-dark"><i class="bi bi-pie-chart-fill"></i> Artist Distribution</h5>
+                    <h5 class="mb-0 text-dark"><i class="bi bi-pie-chart-fill"></i> Characters Drawn</h5>
                 </div>
                 <div class="card-body row align-items-center justify-content-center m-0">
                     <div class="col-12 col-md-6 mb-3 mb-md-0 px-0">
-                        <canvas id="artistChart" style="max-height: 250px;"></canvas>
+                        <canvas id="characterChart" style="max-height: 250px;"></canvas>
                     </div>
-                    <div id="artistLegendContainer" class="col-12 col-md-6 overflow-auto px-0 ps-md-3" style="max-height: 250px;">
+                    <div id="characterLegendContainer" class="col-12 col-md-6 overflow-auto px-0 ps-md-3"
+                        style="max-height: 250px;">
                     </div>
                 </div>
             </div>
@@ -69,26 +65,22 @@
 <!-- Load Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-
-
 <script>
-    // Since Flask tojson might not assign to a JS variable, we inline it:
     const monthlyCounts = {{ monthly_counts | tojson }};
     const yearlyCounts = {{ yearly_counts | tojson }};
-    const artistCounts = {{ artist_counts | tojson }};
+    const characterCounts = {{ character_counts | tojson }};
 
-    // Calculate total to find threshold
-    const totalAppearances = artistCounts.reduce((sum, artist) => sum + artist.count, 0);
-    const threshold = totalAppearances * 0.02;
+    const totalDrawings = characterCounts.reduce((sum, char) => sum + char.count, 0);
+    const threshold = totalDrawings * 0.01;
 
     const chartLabels = [];
     const realChartData = [];
     const chartColors = [];
-    const chartArtistIds = [];
+    const chartCharIds = [];
 
     let otherCount = 0;
-    const otherArtists = artistCounts.filter(a => a.count < threshold);
-    const useOther = otherArtists.length > 1;
+    const otherChars = characterCounts.filter(c => c.count < threshold);
+    const useOther = otherChars.length > 1;
 
     const colors = [
         '#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545',
@@ -97,17 +89,17 @@
     ];
 
     let colorIndex = 0;
-    artistCounts.forEach(artist => {
-        if (useOther && artist.count < threshold) {
-            otherCount += artist.count;
-            artist.color = '#6c757d'; // Gray for "Other" in legend
+    characterCounts.forEach(char => {
+        if (useOther && char.count < threshold) {
+            otherCount += char.count;
+            char.color = '#6c757d';
         } else {
             const color = colors[colorIndex % colors.length];
-            chartLabels.push(artist.name);
-            realChartData.push(artist.count);
+            chartLabels.push(char.name);
+            realChartData.push(char.count);
             chartColors.push(color);
-            chartArtistIds.push(artist.id);
-            artist.color = color; // Save matched color to object for legend
+            chartCharIds.push(char.id);
+            char.color = color;
             colorIndex++;
         }
     });
@@ -116,7 +108,7 @@
         chartLabels.push("Other (< 2%)");
         realChartData.push(otherCount);
         chartColors.push('#6c757d');
-        chartArtistIds.push(null);
+        chartCharIds.push(null);
     }
 
     let chartData = [...realChartData];
@@ -128,8 +120,8 @@
         }
     }
 
-    const ctxArtist = document.getElementById('artistChart').getContext('2d');
-    const artistChart = new Chart(ctxArtist, {
+    const ctxChar = document.getElementById('characterChart').getContext('2d');
+    const characterChart = new Chart(ctxChar, {
         type: 'doughnut',
         data: {
             labels: chartLabels,
@@ -146,7 +138,7 @@
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             let label = context.label || '';
                             if (label) {
                                 label += ': ';
@@ -162,42 +154,40 @@
             onClick: (e, elements) => {
                 if (elements.length > 0) {
                     const index = elements[0].index;
-                    const artistId = chartArtistIds[index];
-                    if (artistId) {
-                        window.location.href = `/advanced-search?whitelist_characters={{ character.id }}&artists=${artistId}`;
+                    const charId = chartCharIds[index];
+                    if (charId) {
+                        window.location.href = `/advanced-search?artists={{ user.id }}&whitelist_characters=${charId}`;
                     }
                 }
             }
         }
     });
 
-    // Generate Custom Scrollable Legend
-    const legendContainer = document.getElementById('artistLegendContainer');
+    const legendContainer = document.getElementById('characterLegendContainer');
     const ul = document.createElement('ul');
     ul.className = 'list-group list-group-flush small w-100';
-    
-    artistCounts.forEach(artist => {
+
+    characterCounts.forEach(char => {
         const li = document.createElement('li');
         li.className = 'list-group-item d-flex justify-content-between align-items-center py-1 px-2 border-0';
         li.innerHTML = `
-            <div class="text-truncate text-start" title="${artist.name}">
-                <span class="d-inline-block rounded-circle me-1" style="width: 10px; height: 10px; background-color: ${artist.color};"></span>
-                <a href="/advanced-search?whitelist_characters={{ character.id }}&artists=${artist.id}" class="text-decoration-none text-dark fw-medium hover-primary">${artist.name}</a>
+            <div class="text-truncate text-start" title="${char.name}">
+                <span class="d-inline-block rounded-circle me-1" style="width: 10px; height: 10px; background-color: ${char.color};"></span>
+                <a href="/advanced-search?artists={{ user.id }}&whitelist_characters=${char.id}" class="text-decoration-none text-dark fw-medium hover-primary">${char.name}</a>
             </div>
-            <span class="badge bg-secondary rounded-pill">${artist.count}</span>
+            <span class="badge bg-secondary rounded-pill">${char.count}</span>
         `;
         ul.appendChild(li);
     });
     legendContainer.appendChild(ul);
 
-    // Prepare Appearances Data (Bar Chart)
     const ctxApp = document.getElementById('appearancesChart').getContext('2d');
     let appearancesChart = new Chart(ctxApp, {
         type: 'bar',
         data: {
             labels: Object.keys(monthlyCounts),
             datasets: [{
-                label: 'Appearances',
+                label: 'Panels Drawn',
                 data: Object.values(monthlyCounts),
                 backgroundColor: 'rgba(13, 110, 253, 0.7)',
                 borderColor: 'rgba(13, 110, 253, 1)',
@@ -210,7 +200,7 @@
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0 } // whole numbers only
+                    ticks: { precision: 0 }
                 }
             },
             onClick: (e, elements) => {
@@ -227,13 +217,12 @@
                         startDate = `${label}-01-01`;
                         endDate = `${label}-12-31`;
                     }
-                    window.location.href = `/advanced-search?whitelist_characters={{ character.id }}&start_date=${startDate}&end_date=${endDate}`;
+                    window.location.href = `/advanced-search?artists={{ user.id }}&start_date=${startDate}&end_date=${endDate}`;
                 }
             }
         }
     });
 
-    // Handle Toggle
     document.getElementById('monthlyBtn').addEventListener('change', function () {
         if (this.checked) {
             appearancesChart.data.labels = Object.keys(monthlyCounts);

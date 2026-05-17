@@ -346,6 +346,48 @@ def user_detail(user_id):
                            user=user, 
                            drawings=drawings_pagination)
 
+@app.route('/user/<int:user_id>/statistics')
+def user_statistics(user_id):
+    user = User.query.get_or_404(user_id)
+    
+    # Query 1: Drawings over time
+    drawings = db.session.query(Page.id, Game.date)\
+        .join(Book, Page.book_id == Book.id)\
+        .join(Game, Book.game_id == Game.id)\
+        .join(Alias, Page.alias_id == Alias.id)\
+        .filter(Alias.user_id == user_id, Page.type == 'image')\
+        .all()
+    
+    monthly_counts = {}
+    yearly_counts = {}
+    for _, game_date in drawings:
+        if game_date:
+            month_key = game_date.strftime('%Y-%m') # "YYYY-MM"
+            year_key = game_date.strftime('%Y')     # "YYYY"
+            monthly_counts[month_key] = monthly_counts.get(month_key, 0) + 1
+            yearly_counts[year_key] = yearly_counts.get(year_key, 0) + 1
+            
+    # Sort chronologically
+    monthly_counts = {k: v for k, v in sorted(monthly_counts.items())}
+    yearly_counts = {k: v for k, v in sorted(yearly_counts.items())}
+    
+    # Query 2: Characters Drawn Distribution
+    character_data = db.session.query(Character.id, Character.name, func.count(Page.id).label('count'))\
+        .join(Character.pages)\
+        .join(Alias, Page.alias_id == Alias.id)\
+        .filter(Alias.user_id == user_id, Page.type == 'image')\
+        .group_by(Character.id, Character.name)\
+        .order_by(func.count(Page.id).desc())\
+        .all()
+        
+    character_counts = [{"id": row[0], "name": row[1], "count": row[2]} for row in character_data]
+    
+    return render_template('user_statistics.html',
+                           user=user,
+                           monthly_counts=monthly_counts,
+                           yearly_counts=yearly_counts,
+                           character_counts=character_counts)
+
 @app.route('/characters')
 def character_list():
     page = request.args.get('page', 1, type=int)

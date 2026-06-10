@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context, jsonify
+from flask import Flask, render_template, request, abort, session, redirect, url_for, flash, copy_current_request_context, jsonify  # ty:ignore[unresolved-import]
 from models import db, User, Alias, Game, Book, Page, Character, AdminKey, DailyChallenge, page_characters
-from sqlalchemy import Engine, or_, Date, event, func, text, select
+from sqlalchemy import Engine, or_, Date, event, func, text, select  # ty:ignore[unresolved-import]
+from sqlalchemy.orm import selectinload, joinedload  # ty:ignore[unresolved-import]
 from sqlalchemy.exc import IntegrityError
 from functools import wraps
 import os
@@ -46,7 +47,9 @@ db.init_app(app)
 @app.route('/')
 def index():
     # Show the 3 most recent games at the top
-    recent_games = Game.query.order_by(Game.date.desc()).limit(4).all()
+    recent_games = Game.query.options(
+        selectinload(Game.books).selectinload(Book.pages)
+    ).order_by(Game.date.desc()).limit(4).all()
 
     # Get today's challenge ID to pass to the JS
     tz = pytz.timezone('America/New_York')
@@ -222,16 +225,21 @@ def api_panel_random():
     untagged_only = request.args.get('untagged', 'false').lower() == 'true'
 
     # Get a random panel
-    panel = Page.query.filter(Page.type == 'image')
+    panel_query = Page.query.filter(Page.type == 'image')
 
     if untagged_only:
-        panel = panel.filter(~Page.characters.any())
+        panel_query = panel_query.filter(~Page.characters.any())
 
-    panel = panel.order_by(func.random()).first()
-    
-    if not panel:
+    count = panel_query.count()
+    if count == 0:
         return jsonify({"error": "No panels found"}), 404
 
+    random_offset = random.randint(0, count - 1)
+    panel = panel_query.options(
+        joinedload(Page.author_alias),
+        joinedload(Page.book).selectinload(Book.pages)
+    ).offset(random_offset).first()
+    
     # Prepare data for JSON
     return jsonify({
         "id": panel.id,
@@ -246,10 +254,17 @@ def api_panel_random():
 
 @app.route('/game/<int:game_id>')
 def game_detail(game_id):
-    game = Game.query.get_or_404(game_id)
+    game = Game.query.options(
+        selectinload(Game.books)
+        .selectinload(Book.pages)
+        .joinedload(Page.author_alias)
+        .joinedload(Alias.user)
+    ).filter_by(id=game_id).first()
+    if not game:
+        abort(404)
     
     # Get all users involved in this game via their aliases in the pages
-    # This is a complex join: Game -> Book -> Page -> Alias -> User
+    # Eagerly loaded relationships mean this loop runs entirely in-memory with 0 queries
     involved_users = set()
     for book in game.books:
         for page in book.pages:
@@ -263,7 +278,9 @@ def game_list():
     page = request.args.get('page', 1, type=int)
     sort = request.args.get('sort', 'desc') # 'desc' for newest first, 'asc' for oldest
     
-    query = Game.query
+    query = Game.query.options(
+        selectinload(Game.books).selectinload(Book.pages)
+    )
     if sort == 'asc':
         query = query.order_by(Game.date.asc())
     else:
@@ -294,7 +311,7 @@ def user_list():
             Alias.user_id == User.id,
             Page.type == "image"
         )
-        .order_by(func.random())
+        .order_by(Page.id.desc())
         .limit(1)
         .lateral()
     )
@@ -333,6 +350,10 @@ def user_detail(user_id):
     # 4. Change .all() to .paginate()
     # This returns a Pagination object instead of a list
     drawings_pagination = Page.query\
+        .options(
+            joinedload(Page.author_alias).joinedload(Alias.user),
+            joinedload(Page.book).selectinload(Book.pages)
+        )\
         .join(Book, Page.book_id == Book.id)\
         .join(Game, Book.game_id == Game.id)\
         .filter(
@@ -413,6 +434,10 @@ def character_detail(char_id):
     per_page = 15  # 5 columns x 3 rows looks great on a grid
     
     pagination = Page.query\
+        .options(
+            joinedload(Page.author_alias).joinedload(Alias.user),
+            joinedload(Page.book).selectinload(Book.pages)
+        )\
         .join(Book, Page.book_id == Book.id)\
         .join(Game, Book.game_id == Game.id)\
         .filter(

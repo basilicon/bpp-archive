@@ -19,7 +19,7 @@ class User(db.Model):
 class Alias(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="SET NULL"), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="SET NULL"), nullable=True, index=True)
     pages = db.relationship('Page', backref='author_alias', lazy=True)
 
 class Game(db.Model):
@@ -49,15 +49,21 @@ class Game(db.Model):
 
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+    game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False, index=True)
     # Order pages by sequence number
-    pages = db.relationship('Page', backref='book', lazy='dynamic', order_by='Page.sequence', cascade="all, delete-orphan")
+    pages = db.relationship('Page', backref='book', order_by='Page.sequence', cascade="all, delete-orphan")
 
     def get_first_text_page(self):
-        return self.pages.filter_by(type='text').first()
+        for page in self.pages:
+            if page.type == 'text':
+                return page
+        return None
 
     def get_first_image_page(self):
-        return self.pages.filter_by(type='image').first()
+        for page in self.pages:
+            if page.type == 'image':
+                return page
+        return None
     
     def get_preview_text(self):
         first_text = self.get_first_text_page()
@@ -73,8 +79,8 @@ class Book(db.Model):
 
 class Page(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
-    alias_id = db.Column(db.Integer, db.ForeignKey('alias.id'), nullable=True)
+    book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False, index=True)
+    alias_id = db.Column(db.Integer, db.ForeignKey('alias.id'), nullable=True, index=True)
     
     sequence = db.Column(db.Integer, nullable=False) # 1, 2, 3...
     type = db.Column(db.String(10), nullable=False) # 'text' or 'image'
@@ -105,7 +111,7 @@ class AdminKey(db.Model):
 class DailyChallenge(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, unique=True, nullable=False) # e.g., 2026-01-17
-    page_id = db.Column(db.Integer, db.ForeignKey('page.id'), nullable=False)
+    page_id = db.Column(db.Integer, db.ForeignKey('page.id'), nullable=False, index=True)
     
     # Relationship to get the panel easily
     panel = db.relationship('Page', backref='daily_challenges')

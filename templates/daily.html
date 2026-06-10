@@ -67,7 +67,7 @@
                     <li class="list-group-item d-none" id="clue-2"><strong>Clue 2 (Date):</strong> {{
                         panel.book.game.date.strftime('%Y-%m-%d') }}</li>
                     <li class="list-group-item d-none" id="clue-3"><strong>Clue 3 (Position):</strong> Page {{
-                        panel.sequence }} of {{ panel.book.pages.count() }}</li>
+                        panel.sequence }} of {{ panel.book.pages|length }}</li>
                     <li class="list-group-item d-none" id="clue-4"><strong>Clue 4 (Characters):</strong>
                         {% for char in panel.characters %}{{ char.name }}{% if not loop.last %}, {% endif %}{% endfor %}
                     </li>

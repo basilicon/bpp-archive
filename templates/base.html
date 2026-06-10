@@ -81,5 +81,38 @@
         <small>&copy; {{ now_year }} Broken Picture Phone Archive</small>
     </footer>
 
+    <script>
+    function resizeGridItem(item) {
+        const card = item.querySelector('.panel-card');
+        if (!card) return;
+        const cardHeight = card.getBoundingClientRect().height;
+        const spacing = 24; // 1.5rem gap spacing
+        item.style.gridRowEnd = "span " + Math.ceil(cardHeight + spacing);
+    }
+
+    function resizeAllGridItems() {
+        const allItems = document.querySelectorAll(".masonry-item");
+        allItems.forEach(resizeGridItem);
+    }
+
+    // Run layout adjustments
+    window.addEventListener("load", resizeAllGridItems);
+    window.addEventListener("resize", resizeAllGridItems);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        resizeAllGridItems();
+        
+        // Listen for image loads to re-calculate heights dynamically
+        document.querySelectorAll('.masonry-item img').forEach(img => {
+            if (img.complete) {
+                resizeGridItem(img.closest('.masonry-item'));
+            } else {
+                img.addEventListener('load', () => {
+                    resizeGridItem(img.closest('.masonry-item'));
+                });
+            }
+        });
+    });
+    </script>
 </body>
 </html>

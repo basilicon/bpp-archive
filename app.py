@@ -1026,6 +1026,14 @@ def set_initial_character_image(target_page, value_character, initiator):
         value_character.image_url = target_page.content_url
         # No need to commit here; SQLAlchemy handles it in the current transaction
 
+@app.template_filter('clean_meta')
+def clean_meta_filter(s):
+    import html
+    from markupsafe import Markup
+    if s is None:
+        return ""
+    return Markup(html.escape(html.unescape(str(s))))
+
 @app.context_processor
 def utility_processor():
     return dict(getattr=getattr)

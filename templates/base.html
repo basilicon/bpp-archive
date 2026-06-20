@@ -23,8 +23,8 @@
 
     <meta property="og:site_name" content="BPP Archive">
     <meta name="theme-color" content="#5865F2"> <title>{% block title %}Picturephone Archive{% endblock %}</title>
-    <meta property="og:title" content="{% block og_title %}BPP Archive{% endblock %}">
-    <meta property="og:description" content="{% block og_desc %}Relive the chaos of past drawings and prompts.{% endblock %}">
+    <meta property="og:title" content="{% filter clean_meta %}{% block og_title %}BPP Archive{% endblock %}{% endfilter %}">
+    <meta property="og:description" content="{% filter clean_meta %}{% block og_desc %}Relive the chaos of past drawings and prompts.{% endblock %}{% endfilter %}">
     <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='logo.png', _external=True) }}{% endblock %}">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
